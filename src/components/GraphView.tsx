@@ -209,9 +209,9 @@ export default function GraphView({ files, activePath, localOnly, onOpen }: Prop
   }, [graph, activePath, onOpen, localOnly]);
 
   return (
-    <div className="graph-view">
+    <div className="rn-graph">
       <canvas ref={canvas} />
-      <div className="graph-controls">
+      <div className="rn-graph-panel">
         <input className="search-input" placeholder="파일 이름으로 필터…" value={filter} onChange={(e) => setFilter(e.target.value)} />
         <label><input type="checkbox" checked={showTags} onChange={(e) => setShowTags(e.target.checked)} /> 태그 표시</label>
         <label><input type="checkbox" checked={showUnresolved} onChange={(e) => setShowUnresolved(e.target.checked)} /> 없는 노트 표시</label>

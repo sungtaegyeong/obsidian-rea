@@ -47,7 +47,7 @@ const isMac = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigat
 const MOD = isMac ? "⌘" : "Ctrl+";
 // 브라우저는 ⌘T·⌘W·⌘N을 가로챌 수 없으므로 웹에서는 Alt 조합을 쓴다
 const NATIVE = electronSupported;
-if (typeof window !== "undefined" && window.reaFs?.frameless) document.documentElement.classList.add("is-frameless");
+if (typeof window !== "undefined" && window.reaFs?.frameless) document.documentElement.classList.add("rn-frameless");
 const SAMPLE_KEY = "rea-notes:sample-vault";
 
 interface Command {
@@ -457,7 +457,7 @@ export default function App() {
         <aside className="sidebar left">
           <div className="sidebar-tabs">
             {leftViews.map(([id, icon, title]) => (
-              <button key={id} title={title} className={leftView === id ? "is-active" : ""} onClick={() => setLeftView(id)}>{icon}</button>
+              <button key={id} title={title} className={leftView === id ? "rn-current" : ""} onClick={() => setLeftView(id)}>{icon}</button>
             ))}
           </div>
           <div className="sidebar-content">
@@ -489,18 +489,18 @@ export default function App() {
       )}
 
       {/* 작업 영역: 분할 창 */}
-      <main className="workspace">
+      <main className="rn-main">
         {panes.map((p, pi) => {
           const t = p.tabs[p.active];
           const file = t.kind === "note" ? files.find((f) => f.path === t.path) : undefined;
           return (
-            <section key={p.id} className={`pane${pi === activePane ? " is-active" : ""}`} onMouseDown={() => setActivePane(pi)}>
+            <section key={p.id} className={`pane${pi === activePane ? " rn-current" : ""}`} onMouseDown={() => setActivePane(pi)}>
               <div className="tab-header">
                 <div className="tabs">
                   {p.tabs.map((x, ti) => (
                     <div
                       key={x.id}
-                      className={`tab${ti === p.active ? " is-active" : ""}`}
+                      className={`tab${ti === p.active ? " rn-current" : ""}`}
                       onClick={() => updatePane(pi, (q) => ({ ...q, active: ti }))}
                       onAuxClick={(e) => e.button === 1 && closeTab(pi, ti)}
                     >
@@ -517,7 +517,7 @@ export default function App() {
               </div>
 
               {t.kind === "note" && file && (
-                <div className="view-header">
+                <div className="rn-view-top">
                   <div className="view-nav">
                     <button title="뒤로" disabled={!t.back?.length} onClick={() => navigate(pi, "back")}><ArrowLeft size={16} /></button>
                     <button title="앞으로" disabled={!t.fwd?.length} onClick={() => navigate(pi, "fwd")}><ArrowRight size={16} /></button>
@@ -526,13 +526,13 @@ export default function App() {
                     {dirname(file.path) && <span className="crumb-folder">{dirname(file.path).split("/").join(" / ")} / </span>}
                     <span>{basename(file.path)}</span>
                   </div>
-                  <button className="view-action" title={`${t.mode === "edit" ? "읽기 보기로" : "편집 보기로"} 전환 (${keyLabel("mod+e")})`} onClick={() => updatePane(pi, (q) => ({ ...q, tabs: q.tabs.map((y, k) => (k === q.active ? { ...y, mode: y.mode === "edit" ? "read" : "edit" } : y)) }))}>
+                  <button className="rn-view-btn" title={`${t.mode === "edit" ? "읽기 보기로" : "편집 보기로"} 전환 (${keyLabel("mod+e")})`} onClick={() => updatePane(pi, (q) => ({ ...q, tabs: q.tabs.map((y, k) => (k === q.active ? { ...y, mode: y.mode === "edit" ? "read" : "edit" } : y)) }))}>
                     {t.mode === "edit" ? <BookOpen size={16} /> : <Pencil size={16} />}
                   </button>
                 </div>
               )}
 
-              <div className="view-content">
+              <div className="rn-view-body">
                 {t.kind === "note" && file && (
                   <div className="note-scroll">
                     <div className="note-sizer">
@@ -561,15 +561,15 @@ export default function App() {
                     </div>
                   </div>
                 )}
-                {t.kind === "note" && !file && <div className="empty-state">파일을 찾을 수 없습니다</div>}
+                {t.kind === "note" && !file && <div className="rn-blank">파일을 찾을 수 없습니다</div>}
                 {t.kind === "graph" && <GraphView files={files} activePath={activeFile?.path ?? null} onOpen={(path) => openFile(path, true)} />}
                 {t.kind === "empty" && (
-                  <div className="empty-state">
-                    <div className="empty-state-title">새 탭</div>
-                    <div className="empty-state-action" onClick={() => createNote("")}><FilePlus size={15} /> 새 노트 만들기 <kbd>{keyLabel(NATIVE ? "mod+n" : "mod+alt+n")}</kbd></div>
-                    <div className="empty-state-action" onClick={() => setModal({ type: "switcher" })}><FileSearch size={15} /> 파일로 이동 <kbd>{keyLabel("mod+o")}</kbd></div>
-                    <div className="empty-state-action" onClick={openGraph}><Waypoints size={15} /> 그래프 뷰 열기 <kbd>{keyLabel("mod+g")}</kbd></div>
-                    <div className="empty-state-action" onClick={() => closeTab(pi, p.active)}><X size={15} /> 닫기</div>
+                  <div className="rn-blank">
+                    <div className="rn-blank-title">새 탭</div>
+                    <div className="rn-blank-action" onClick={() => createNote("")}><FilePlus size={15} /> 새 노트 만들기 <kbd>{keyLabel(NATIVE ? "mod+n" : "mod+alt+n")}</kbd></div>
+                    <div className="rn-blank-action" onClick={() => setModal({ type: "switcher" })}><FileSearch size={15} /> 파일로 이동 <kbd>{keyLabel("mod+o")}</kbd></div>
+                    <div className="rn-blank-action" onClick={openGraph}><Waypoints size={15} /> 그래프 뷰 열기 <kbd>{keyLabel("mod+g")}</kbd></div>
+                    <div className="rn-blank-action" onClick={() => closeTab(pi, p.active)}><X size={15} /> 닫기</div>
                   </div>
                 )}
               </div>
@@ -583,7 +583,7 @@ export default function App() {
         <aside className="sidebar right">
           <div className="sidebar-tabs">
             {rightViews.map(([id, icon, title]) => (
-              <button key={id} title={title} className={rightView === id ? "is-active" : ""} onClick={() => setRightView(id)}>{icon}</button>
+              <button key={id} title={title} className={rightView === id ? "rn-current" : ""} onClick={() => setRightView(id)}>{icon}</button>
             ))}
           </div>
           <div className="sidebar-title">{rightViews.find((v) => v[0] === rightView)![2]}{activeFile ? `: ${basename(activeFile.path)}` : ""}</div>
@@ -596,7 +596,7 @@ export default function App() {
       )}
 
       {/* 상태 표시줄 */}
-      <footer className="status-bar">
+      <footer className="rn-statusbar">
         {activeFile && stats && (
           <>
             <span className="status-item clickable" onClick={() => (setRightOpen(true), setRightView("backlinks"))}>백링크 {backlinkCount}개</span>
@@ -681,7 +681,7 @@ export default function App() {
           }}
         />
       )}
-      {toast && <div className="notice">{toast}</div>}
+      {toast && <div className="rn-toast">{toast}</div>}
     </div>
   );
 }
@@ -696,7 +696,7 @@ function InlineTitle({ name, onRename }: { name: string; onRename(n: string): vo
   };
   return (
     <input
-      className="inline-title"
+      className="rn-note-title"
       value={v}
       spellCheck={false}
       onChange={(e) => setV(e.target.value)}
@@ -735,7 +735,7 @@ function StartScreen({ onOpen, notify, toast }: { onOpen(b: VaultBackend): void;
               <div className="start-action-title">샘플 볼트 열기</div>
               <div className="start-action-desc">미리 준비한 노트 9개로 바로 시작합니다. 변경 사항은 이 브라우저에 저장됩니다.</div>
             </div>
-            <button className="mod-cta" onClick={() => onOpen(createSampleVault())}>열기</button>
+            <button className="rn-btn-primary" onClick={() => onOpen(createSampleVault())}>열기</button>
           </div>
           <div className="start-action">
             <div>
@@ -750,7 +750,7 @@ function StartScreen({ onOpen, notify, toast }: { onOpen(b: VaultBackend): void;
           </div>
         </div>
       </div>
-      {toast && <div className="notice">{toast}</div>}
+      {toast && <div className="rn-toast">{toast}</div>}
     </div>
   );
 }

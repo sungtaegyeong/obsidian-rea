@@ -59,18 +59,18 @@ const TABS: [TabId, string][] = [
 
 function Row({ name, desc, children }: { name: string; desc?: string; children: React.ReactNode }) {
   return (
-    <div className="setting-item">
-      <div className="setting-item-info">
-        <div className="setting-item-name">{name}</div>
-        {desc && <div className="setting-item-description">{desc}</div>}
+    <div className="rn-opt">
+      <div className="rn-opt-info">
+        <div className="rn-opt-name">{name}</div>
+        {desc && <div className="rn-opt-desc">{desc}</div>}
       </div>
-      <div className="setting-item-control">{children}</div>
+      <div className="rn-opt-ctrl">{children}</div>
     </div>
   );
 }
 
 function Toggle({ on, set }: { on: boolean; set(v: boolean): void }) {
-  return <div className={`checkbox-container${on ? " is-enabled" : ""}`} onClick={() => set(!on)} role="switch" aria-checked={on} />;
+  return <div className={`rn-switch${on ? " rn-on" : ""}`} onClick={() => set(!on)} role="switch" aria-checked={on} />;
 }
 
 export default function SettingsModal({ settings, onChange, hotkeys, vaultName, fileCount, onClose }: Props) {
@@ -80,11 +80,11 @@ export default function SettingsModal({ settings, onChange, hotkeys, vaultName, 
 
   return (
     <div className="modal-backdrop" onMouseDown={onClose}>
-      <div className="modal settings-modal" onMouseDown={(e) => e.stopPropagation()}>
+      <div className="rn-dialog settings-modal" onMouseDown={(e) => e.stopPropagation()}>
         <div className="settings-nav">
           <div className="settings-nav-title">옵션</div>
           {TABS.map(([id, label]) => (
-            <div key={id} className={`settings-nav-item${tab === id ? " is-active" : ""}`} onClick={() => setTab(id)}>
+            <div key={id} className={`settings-nav-item${tab === id ? " rn-current" : ""}`} onClick={() => setTab(id)}>
               {label}
             </div>
           ))}
@@ -123,7 +123,7 @@ export default function SettingsModal({ settings, onChange, hotkeys, vaultName, 
               <Row name="강조 색" desc="링크, 선택한 항목, 그래프의 현재 노트에 쓰입니다.">
                 <div className="accent-swatches">
                   {ACCENTS.map((c) => (
-                    <button key={c} className={`swatch${settings.accent === c ? " is-active" : ""}`} style={{ background: c }} onClick={() => set("accent", c)} aria-label={c} />
+                    <button key={c} className={`swatch${settings.accent === c ? " rn-current" : ""}`} style={{ background: c }} onClick={() => set("accent", c)} aria-label={c} />
                   ))}
                 </div>
               </Row>

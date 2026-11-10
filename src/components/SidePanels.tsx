@@ -65,20 +65,20 @@ export function SearchPanel({ files, query, setQuery, onOpen }: SearchProps) {
     <div className="panel search-panel">
       <div className="search-input-row">
         <input autoFocus className="search-input" placeholder="검색어 입력…" value={query} onChange={(e) => setQuery(e.target.value)} />
-        <button className={`toggle${matchCase ? " is-active" : ""}`} title="대소문자 구분" onClick={() => setMatchCase(!matchCase)}><CaseSensitive size={16} /></button>
-        <button className={`toggle${regex ? " is-active" : ""}`} title="정규식 사용" onClick={() => setRegex(!regex)}><Regex size={16} /></button>
+        <button className={`toggle${matchCase ? " rn-current" : ""}`} title="대소문자 구분" onClick={() => setMatchCase(!matchCase)}><CaseSensitive size={16} /></button>
+        <button className={`toggle${regex ? " rn-current" : ""}`} title="정규식 사용" onClick={() => setRegex(!regex)}><Regex size={16} /></button>
       </div>
       <div className="search-hint">연산자: tag:#태그 · file:이름 · path:경로</div>
       {error && <div className="search-error">정규식 오류: {error}</div>}
       {query.trim() && <div className="search-count">{results.length}개 파일에서 일치</div>}
-      <div className="search-results">
+      <div className="rn-hits">
         {results.map(({ file, hits }) => (
-          <div key={file.path} className="search-result">
-            <div className="search-result-file" onClick={() => onOpen(file.path)}>
+          <div key={file.path} className="rn-hit">
+            <div className="rn-hit-file" onClick={() => onOpen(file.path)}>
               <span>{highlight(basename(file.path))}</span> <span className="count">{hits.length}</span>
             </div>
             {hits.slice(0, 5).map((h) => (
-              <div key={h.line} className="search-result-match" onClick={() => onOpen(file.path, h.line)}>
+              <div key={h.line} className="rn-hit-line" onClick={() => onOpen(file.path, h.line)}>
                 {highlight(h.text.trim())}
               </div>
             ))}
@@ -138,10 +138,10 @@ export function BacklinksPanel({ files, path, onOpen }: { files: NoteFile[]; pat
         {title} <span className="count">{items.length}</span>
       </div>
       {items.map(({ file, lines }) => (
-        <div key={file.path} className="search-result">
-          <div className="search-result-file" onClick={() => onOpen(file.path)}>{basename(file.path)}</div>
+        <div key={file.path} className="rn-hit">
+          <div className="rn-hit-file" onClick={() => onOpen(file.path)}>{basename(file.path)}</div>
           {lines.slice(0, 3).map((l) => (
-            <div key={l.line} className="search-result-match" onClick={() => onOpen(file.path, l.line)}>{l.text.trim()}</div>
+            <div key={l.line} className="rn-hit-line" onClick={() => onOpen(file.path, l.line)}>{l.text.trim()}</div>
           ))}
         </div>
       ))}

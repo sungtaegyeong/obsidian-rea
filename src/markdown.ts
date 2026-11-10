@@ -88,7 +88,7 @@ md.inline.ruler.before("link", "wikilink", (state, silent) => {
 md.renderer.rules.wikilink = (tokens, idx, _o, env) => {
   const { target, display } = tokens[idx].meta;
   const exists = (env as { exists?: (t: string) => boolean }).exists?.(target) ?? true;
-  return `<a class="internal-link${exists ? "" : " is-unresolved"}" data-href="${esc(target)}">${esc(display)}</a>`;
+  return `<a class="rn-wikilink${exists ? "" : " rn-missing"}" data-href="${esc(target)}">${esc(display)}</a>`;
 };
 
 md.inline.ruler.before("emphasis", "hashtag", (state, silent) => {
@@ -104,7 +104,7 @@ md.inline.ruler.before("emphasis", "hashtag", (state, silent) => {
   state.pos += m[0].length;
   return true;
 });
-md.renderer.rules.hashtag = (tokens, idx) => `<a class="tag" data-tag="${esc(tokens[idx].content)}">#${esc(tokens[idx].content)}</a>`;
+md.renderer.rules.hashtag = (tokens, idx) => `<a class="rn-tag" data-tag="${esc(tokens[idx].content)}">#${esc(tokens[idx].content)}</a>`;
 
 export function renderMarkdown(content: string, exists: (target: string) => boolean): string {
   let taskIndex = 0;
@@ -112,7 +112,7 @@ export function renderMarkdown(content: string, exists: (target: string) => bool
   // 체크리스트 "- [ ]" / "- [x]"를 체크박스로 바꾼다 (data-task: 문서 안 순번)
   return html.replace(/<li>(<p>)?\[( |x|X)\]\s?/g, (_m, p, mark) => {
     const checked = mark.toLowerCase() === "x";
-    return `<li class="task-list-item${checked ? " is-checked" : ""}">${p ?? ""}<input type="checkbox" class="task-list-item-checkbox" data-task="${taskIndex++}"${checked ? " checked" : ""}> `;
+    return `<li class="rn-task${checked ? " is-checked" : ""}">${p ?? ""}<input type="checkbox" class="rn-task-box" data-task="${taskIndex++}"${checked ? " checked" : ""}> `;
   });
 }
 

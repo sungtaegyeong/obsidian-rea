@@ -30,17 +30,17 @@ export default function ReadingView({ content, exists, onOpenLink, onTag, onTogg
   return (
     <div
       ref={ref}
-      className="markdown-reading-view"
+      className="rn-reader"
       dangerouslySetInnerHTML={{ __html: html }}
       onClick={(e) => {
         const el = e.target as HTMLElement;
-        const link = el.closest<HTMLElement>("a.internal-link");
+        const link = el.closest<HTMLElement>("a.rn-wikilink");
         if (link) {
           e.preventDefault();
           onOpenLink(link.dataset.href!, e.metaKey || e.ctrlKey);
           return;
         }
-        const tag = el.closest<HTMLElement>("a.tag");
+        const tag = el.closest<HTMLElement>("a.rn-tag");
         if (tag) {
           e.preventDefault();
           onTag(tag.dataset.tag!);

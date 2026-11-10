@@ -36,14 +36,14 @@ const highlight = HighlightStyle.define([
   { tag: t.heading2, class: "cm-h2" },
   { tag: t.heading3, class: "cm-h3" },
   { tag: [t.heading4, t.heading5, t.heading6], class: "cm-h4" },
-  { tag: t.strong, class: "cm-strong" },
-  { tag: t.emphasis, class: "cm-em" },
+  { tag: t.strong, class: "rn-md-strong" },
+  { tag: t.emphasis, class: "rn-md-em" },
   { tag: t.strikethrough, class: "cm-strike" },
-  { tag: t.monospace, class: "cm-inline-code" },
-  { tag: t.link, class: "cm-link" },
-  { tag: t.url, class: "cm-url" },
-  { tag: t.quote, class: "cm-quote" },
-  { tag: [t.processingInstruction, t.meta], class: "cm-formatting" },
+  { tag: t.monospace, class: "rn-md-code" },
+  { tag: t.link, class: "rn-md-link" },
+  { tag: t.url, class: "rn-md-url" },
+  { tag: t.quote, class: "rn-md-quote" },
+  { tag: [t.processingInstruction, t.meta], class: "rn-md-mark" },
   { tag: t.list, class: "cm-list" },
 ]);
 
@@ -65,7 +65,7 @@ const linkAndTagMarks = ViewPlugin.fromClass(
         for (const m of text.matchAll(/\[\[[^\]\n]+?\]\]/g)) marks.push([from + m.index!, from + m.index! + m[0].length, "cm-wikilink"]);
         for (const m of text.matchAll(/(^|\s)(#[\p{L}\p{N}_\-/]+)/gu)) {
           const s = from + m.index! + m[1].length;
-          if (!/^#\d+$/.test(m[2])) marks.push([s, s + m[2].length, "cm-hashtag"]);
+          if (!/^#\d+$/.test(m[2])) marks.push([s, s + m[2].length, "rn-md-tag"]);
         }
         marks.sort((a, c) => a[0] - c[0]).forEach(([s, e, cls]) => b.add(s, e, Decoration.mark({ class: cls })));
       }
@@ -285,5 +285,5 @@ export default function Editor({ docKey, value, livePreview, onChange, onOpenLin
     view.current?.dispatch({ effects: lp.current.reconfigure(livePreview ? livePreviewPlugin : []) });
   }, [livePreview]);
 
-  return <div className={`editor-host${livePreview ? " is-live-preview" : " is-source"}`} ref={host} />;
+  return <div className={`editor-host${livePreview ? " rn-lp" : " is-source"}`} ref={host} />;
 }

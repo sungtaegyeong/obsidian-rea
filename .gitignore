@@ -18,3 +18,6 @@ _to_delete/
 
 # 원본 앱이 샘플 볼트에 만드는 설정 폴더
 sample-vault/.obsidian/
+
+# 브라우저 자동화 도구 산출물
+.playwright-mcp/

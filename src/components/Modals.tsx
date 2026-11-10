@@ -66,10 +66,10 @@ export function PickerModal({ placeholder, items, emptyAction, instructions, onP
 
   return (
     <div className="modal-backdrop" onMouseDown={onClose}>
-      <div className="prompt" onMouseDown={(e) => e.stopPropagation()}>
+      <div className="rn-palette" onMouseDown={(e) => e.stopPropagation()}>
         <input
           autoFocus
-          className="prompt-input"
+          className="rn-palette-input"
           placeholder={placeholder}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -80,19 +80,19 @@ export function PickerModal({ placeholder, items, emptyAction, instructions, onP
             else if (e.key === "Escape") onClose();
           }}
         />
-        <div className="prompt-results" ref={listRef}>
+        <div className="rn-palette-list" ref={listRef}>
           {list.map((it, i) => (
-            <div key={it.id} className={`suggestion-item${i === sel ? " is-selected" : ""}`} onMouseEnter={() => setSel(i)} onClick={(e) => onPick(it, query, e.metaKey || e.ctrlKey)}>
-              <div className="suggestion-content">
-                <div className="suggestion-title"><Highlight text={it.label} idx={it.idx} /></div>
-                {it.note && <div className="suggestion-note">{it.note}</div>}
+            <div key={it.id} className={`rn-pick${i === sel ? " rn-picked" : ""}`} onMouseEnter={() => setSel(i)} onClick={(e) => onPick(it, query, e.metaKey || e.ctrlKey)}>
+              <div className="rn-pick-body">
+                <div className="rn-pick-title"><Highlight text={it.label} idx={it.idx} /></div>
+                {it.note && <div className="rn-pick-note">{it.note}</div>}
               </div>
               {it.hotkey && <kbd>{it.hotkey}</kbd>}
             </div>
           ))}
-          {!list.length && <div className="suggestion-empty">일치하는 항목이 없습니다</div>}
+          {!list.length && <div className="rn-pick-empty">일치하는 항목이 없습니다</div>}
         </div>
-        <div className="prompt-instructions">
+        <div className="rn-palette-hints">
           {instructions.map(([k, v]) => (
             <span key={k}><kbd>{k}</kbd> {v}</span>
           ))}
@@ -107,8 +107,8 @@ export function InputModal({ title, initial, onSubmit, onClose }: { title: strin
   const [v, setV] = useState(initial);
   return (
     <div className="modal-backdrop" onMouseDown={onClose}>
-      <div className="modal small" onMouseDown={(e) => e.stopPropagation()}>
-        <div className="modal-title">{title}</div>
+      <div className="rn-dialog small" onMouseDown={(e) => e.stopPropagation()}>
+        <div className="rn-dialog-title">{title}</div>
         <input
           autoFocus
           className="text-input"
@@ -122,7 +122,7 @@ export function InputModal({ title, initial, onSubmit, onClose }: { title: strin
         />
         <div className="modal-buttons">
           <button onClick={onClose}>취소</button>
-          <button className="mod-cta" disabled={!v.trim()} onClick={() => onSubmit(v.trim())}>확인</button>
+          <button className="rn-btn-primary" disabled={!v.trim()} onClick={() => onSubmit(v.trim())}>확인</button>
         </div>
       </div>
     </div>
@@ -132,12 +132,12 @@ export function InputModal({ title, initial, onSubmit, onClose }: { title: strin
 export function ConfirmModal({ title, message, onOk, onClose }: { title: string; message: string; onOk(): void; onClose(): void }) {
   return (
     <div className="modal-backdrop" onMouseDown={onClose}>
-      <div className="modal small" onMouseDown={(e) => e.stopPropagation()}>
-        <div className="modal-title">{title}</div>
+      <div className="rn-dialog small" onMouseDown={(e) => e.stopPropagation()}>
+        <div className="rn-dialog-title">{title}</div>
         <p>{message}</p>
         <div className="modal-buttons">
           <button onClick={onClose}>취소</button>
-          <button className="mod-warning" autoFocus onClick={onOk}>삭제</button>
+          <button className="rn-btn-danger" autoFocus onClick={onOk}>삭제</button>
         </div>
       </div>
     </div>

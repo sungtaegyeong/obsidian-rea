@@ -84,7 +84,7 @@ export default function FileExplorer(p: Props) {
     node.children.map((c) => (
       <div key={c.path}>
         <div
-          className={`tree-item${!c.folder && c.path === p.activePath ? " is-active" : ""}${dragOver === c.path ? " is-drop-target" : ""}`}
+          className={`rn-node${!c.folder && c.path === p.activePath ? " rn-current" : ""}${dragOver === c.path ? " is-drop-target" : ""}`}
           style={{ paddingLeft: 8 + depth * 16 }}
           draggable
           onDragStart={(e) => e.dataTransfer.setData("text/rea-path", c.path)}
@@ -145,9 +145,9 @@ export default function FileExplorer(p: Props) {
         </button>
         <button title="모두 접기" onClick={() => setCollapsed(new Set(p.folders))}><ChevronsDownUp size={16} /></button>
         {sortOpen && (
-          <div className="menu" style={{ top: 34, left: 60 }} onClick={(e) => e.stopPropagation()}>
+          <div className="rn-popover" style={{ top: 34, left: 60 }} onClick={(e) => e.stopPropagation()}>
             {(Object.keys(SORT_LABELS) as SortMode[]).map((k) => (
-              <div key={k} className={`menu-item${k === sort ? " is-selected" : ""}`} onClick={() => { setSort(k); setSortOpen(false); }}>
+              <div key={k} className={`rn-popover-item${k === sort ? " rn-picked" : ""}`} onClick={() => { setSort(k); setSortOpen(false); }}>
                 {SORT_LABELS[k]}
               </div>
             ))}
@@ -156,12 +156,12 @@ export default function FileExplorer(p: Props) {
       </div>
       <div className="tree">{render(tree, 0)}</div>
       {menu && (
-        <div className="menu" style={{ position: "fixed", top: menu.y, left: menu.x }}>
-          {menu.folder && <div className="menu-item" onClick={() => { p.onNewNote(menu.path); setMenu(null); }}>새 노트</div>}
-          {menu.folder && <div className="menu-item" onClick={() => { p.onNewFolder(menu.path); setMenu(null); }}>새 폴더</div>}
-          {!menu.folder && <div className="menu-item" onClick={() => { p.onOpen(menu.path, true); setMenu(null); }}>새 탭에서 열기</div>}
-          <div className="menu-item" onClick={() => { p.onRename(menu.path, menu.folder); setMenu(null); }}>이름 바꾸기</div>
-          <div className="menu-item is-warning" onClick={() => { p.onDelete(menu.path, menu.folder); setMenu(null); }}>삭제</div>
+        <div className="rn-popover" style={{ position: "fixed", top: menu.y, left: menu.x }}>
+          {menu.folder && <div className="rn-popover-item" onClick={() => { p.onNewNote(menu.path); setMenu(null); }}>새 노트</div>}
+          {menu.folder && <div className="rn-popover-item" onClick={() => { p.onNewFolder(menu.path); setMenu(null); }}>새 폴더</div>}
+          {!menu.folder && <div className="rn-popover-item" onClick={() => { p.onOpen(menu.path, true); setMenu(null); }}>새 탭에서 열기</div>}
+          <div className="rn-popover-item" onClick={() => { p.onRename(menu.path, menu.folder); setMenu(null); }}>이름 바꾸기</div>
+          <div className="rn-popover-item rn-danger" onClick={() => { p.onDelete(menu.path, menu.folder); setMenu(null); }}>삭제</div>
         </div>
       )}
     </div>

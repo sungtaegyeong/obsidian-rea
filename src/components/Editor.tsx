@@ -196,15 +196,22 @@ const headingLines = ViewPlugin.fromClass(
     }
     build(view: EditorView) {
       const b = new RangeSetBuilder<Decoration>();
+      const done = new Set<number>();
       for (const { from, to } of view.visibleRanges) {
         syntaxTree(view.state).iterate({
           from,
           to,
           enter: (node) => {
             const m = /^ATXHeading(\d)$/.exec(node.name);
+            const line = view.state.doc.lineAt(node.from);
+            if (done.has(line.from)) return;
             if (m) {
-              const line = view.state.doc.lineAt(node.from);
+              done.add(line.from);
               b.add(line.from, line.from, Decoration.line({ class: `cm-line-h${Math.min(+m[1], 4)}` }));
+            } else if (node.name === "ListItem") {
+              // 목록 줄: 줄이 넘치면 글머리표 뒤 글자 위치에 맞춰 들여쓴다
+              done.add(line.from);
+              b.add(line.from, line.from, Decoration.line({ class: "rn-list-line" }));
             }
           },
         });

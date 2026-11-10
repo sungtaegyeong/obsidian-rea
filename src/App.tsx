@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  Files, Search, Tags, Link2, ListTree, Waypoints, FileSearch, SquareTerminal, CalendarDays, Settings as SettingsIcon,
+  FolderClosed, Search, Tags, Link2, ListTree, Waypoints, FileSearch, SquareTerminal, CalendarDays, Settings as SettingsIcon,
   FolderOpen, PanelLeft, PanelRight, Plus, X, Columns2, BookOpen, Pencil, NotebookPen, FilePlus, ArrowLeft, ArrowRight,
+  ChevronsUpDown, Ellipsis, Trash2,
 } from "lucide-react";
 import Editor, { type EditorHandle } from "./components/Editor";
 import ReadingView, { type ReadingHandle } from "./components/ReadingView";
@@ -76,6 +77,13 @@ export default function App() {
   const [leftView, setLeftView] = useState<LeftView>("files");
   const [rightView, setRightView] = useState<RightView>("backlinks");
   const [modal, setModal] = useState<Modal>(null);
+  const [moreMenu, setMoreMenu] = useState<number | null>(null); // "다른 옵션" 메뉴가 열린 창 번호
+  useEffect(() => {
+    if (moreMenu == null) return;
+    const close = () => setMoreMenu(null);
+    window.addEventListener("mousedown", close);
+    return () => window.removeEventListener("mousedown", close);
+  }, [moreMenu]);
   const [query, setQuery] = useState("");
   const [toast, setToast] = useState<string | null>(null);
 
@@ -425,41 +433,47 @@ export default function App() {
   if (!backend) return <StartScreen onOpen={openVault} notify={notify} toast={toast} />;
 
   const leftViews: [LeftView, React.ReactNode, string][] = [
-    ["files", <Files size={16} />, "파일 탐색기"],
-    ["search", <Search size={16} />, "검색"],
-    ["tags", <Tags size={16} />, "태그"],
+    ["files", <FolderClosed size={18} />, "파일 탐색기"],
+    ["search", <Search size={18} />, "검색"],
+    ["tags", <Tags size={18} />, "태그"],
   ];
   const rightViews: [RightView, React.ReactNode, string][] = [
-    ["backlinks", <Link2 size={16} />, "백링크"],
-    ["outline", <ListTree size={16} />, "개요"],
-    ["graph", <Waypoints size={16} />, "로컬 그래프"],
+    ["backlinks", <Link2 size={18} />, "백링크"],
+    ["outline", <ListTree size={18} />, "개요"],
+    ["graph", <Waypoints size={18} />, "로컬 그래프"],
   ];
 
   return (
-    <div className={`app${settings.readableWidth ? " readable" : ""}${leftOpen ? "" : " left-closed"}`}>
-      {/* 리본 */}
-      <div className="ribbon">
-        <div className="ribbon-top">
-          <button title={`사이드바 접기·펴기`} onClick={() => setLeftOpen((o) => !o)}><PanelLeft size={18} /></button>
-          <button title={`빠른 전환 (${keyLabel("mod+o")})`} onClick={() => setModal({ type: "switcher" })}><FileSearch size={18} /></button>
-          <button title={`그래프 뷰 (${keyLabel("mod+g")})`} onClick={openGraph}><Waypoints size={18} /></button>
-          <button title="오늘의 일일 노트" onClick={openDaily}><CalendarDays size={18} /></button>
-          <button title={`커맨드 팔레트 (${keyLabel("mod+p")})`} onClick={() => setModal({ type: "palette" })}><SquareTerminal size={18} /></button>
+    <div className={`app${settings.readableWidth ? " readable" : ""}${leftOpen ? "" : " left-closed"}${rightOpen ? "" : " right-closed"}`}>
+      {/* 왼쪽 도크: 머리줄(사이드바 탭 + 접기) 아래에 리본과 사이드바 */}
+      <div className="rn-dock rn-dock-left">
+        <div className="rn-dock-head">
+          <span className="rn-traffic-space" />
+          {leftOpen && leftViews.map(([id, icon, title]) => (
+            <button key={id} title={title} className={leftView === id ? "rn-current" : ""} onClick={() => setLeftView(id)}>{icon}</button>
+          ))}
+          <span className="rn-grow" />
+          <button className="rn-dock-toggle" title="왼쪽 사이드바 접기·펴기" onClick={() => setLeftOpen((o) => !o)}><PanelLeft size={18} /></button>
         </div>
-        <div className="ribbon-bottom">
-          <button title="다른 볼트 열기" onClick={() => setBackend(null)}><FolderOpen size={18} /></button>
-          <button title={`설정 (${keyLabel("mod+,")})`} onClick={() => setModal({ type: "settings" })}><SettingsIcon size={18} /></button>
-        </div>
-      </div>
+        <div className="rn-dock-body">
+          <div className="ribbon">
+            <div className="ribbon-top">
+              <button title={`빠른 전환 (${keyLabel("mod+o")})`} onClick={() => setModal({ type: "switcher" })}><FileSearch size={18} /></button>
+              <button title={`그래프 뷰 (${keyLabel("mod+g")})`} onClick={openGraph}><Waypoints size={18} /></button>
+              <button title="오늘의 일일 노트" onClick={openDaily}><CalendarDays size={18} /></button>
+              <button title={`커맨드 팔레트 (${keyLabel("mod+p")})`} onClick={() => setModal({ type: "palette" })}><SquareTerminal size={18} /></button>
+            </div>
+            {!leftOpen && (
+              <div className="ribbon-bottom">
+                <button title="다른 볼트 열기" onClick={() => setBackend(null)}><FolderOpen size={18} /></button>
+                <button title={`설정 (${keyLabel("mod+,")})`} onClick={() => setModal({ type: "settings" })}><SettingsIcon size={18} /></button>
+              </div>
+            )}
+          </div>
 
       {/* 왼쪽 사이드바 */}
       {leftOpen && (
         <aside className="sidebar left">
-          <div className="sidebar-tabs">
-            {leftViews.map(([id, icon, title]) => (
-              <button key={id} title={title} className={leftView === id ? "rn-current" : ""} onClick={() => setLeftView(id)}>{icon}</button>
-            ))}
-          </div>
           <div className="sidebar-content">
             {leftView === "files" && (
               <FileExplorer
@@ -482,11 +496,16 @@ export default function App() {
             {leftView === "search" && <SearchPanel files={files} query={query} setQuery={setQuery} onOpen={(p, line) => openFile(p, false, line != null ? "edit" : undefined, line)} />}
             {leftView === "tags" && <TagsPanel files={files} onTag={(t) => openSearch(`tag:#${t}`)} />}
           </div>
-          <div className="vault-switcher" onClick={() => setBackend(null)} title="다른 볼트 열기">
-            <NotebookPen size={14} /> {backend.name}
+          <div className="vault-switcher">
+            <div className="vault-switcher-name" onClick={() => setBackend(null)} title="다른 볼트 열기">
+              <ChevronsUpDown size={16} /> <span>{backend.name}</span>
+            </div>
+            <button title={`설정 (${keyLabel("mod+,")})`} onClick={() => setModal({ type: "settings" })}><SettingsIcon size={18} /></button>
           </div>
         </aside>
       )}
+        </div>
+      </div>
 
       {/* 작업 영역: 분할 창 */}
       <main className="rn-main">
@@ -511,8 +530,7 @@ export default function App() {
                   <button className="tab-new" title="새 탭" onClick={() => { setActivePane(pi); updatePane(pi, (q) => ({ ...q, tabs: [...q.tabs, { id: uid(), kind: "empty", mode: settings.defaultMode }], active: q.tabs.length })); }}><Plus size={15} /></button>
                 </div>
                 <div className="tab-actions">
-                  <button title={`오른쪽으로 분할 (${keyLabel("mod+\\")})`} onClick={() => { setActivePane(pi); split(); }}><Columns2 size={15} /></button>
-                  {pi === panes.length - 1 && <button title="오른쪽 사이드바" onClick={() => setRightOpen((o) => !o)}><PanelRight size={15} /></button>}
+                  {pi === panes.length - 1 && !rightOpen && <button title="오른쪽 사이드바 펴기" onClick={() => setRightOpen(true)}><PanelRight size={18} /></button>}
                 </div>
               </div>
 
@@ -527,8 +545,18 @@ export default function App() {
                     <span>{basename(file.path)}</span>
                   </div>
                   <button className="rn-view-btn" title={`${t.mode === "edit" ? "읽기 보기로" : "편집 보기로"} 전환 (${keyLabel("mod+e")})`} onClick={() => updatePane(pi, (q) => ({ ...q, tabs: q.tabs.map((y, k) => (k === q.active ? { ...y, mode: y.mode === "edit" ? "read" : "edit" } : y)) }))}>
-                    {t.mode === "edit" ? <BookOpen size={16} /> : <Pencil size={16} />}
+                    {t.mode === "edit" ? <BookOpen size={18} /> : <Pencil size={18} />}
                   </button>
+                  <button className="rn-view-btn" title="다른 옵션" onClick={(e) => { e.stopPropagation(); setActivePane(pi); setMoreMenu(moreMenu === pi ? null : pi); }}>
+                    <Ellipsis size={18} />
+                  </button>
+                  {moreMenu === pi && (
+                    <div className="rn-popover rn-more-menu" onMouseDown={(e) => e.stopPropagation()}>
+                      <div className="rn-popover-item" onClick={() => { setMoreMenu(null); split(); }}><Columns2 size={15} /> 오른쪽으로 분할</div>
+                      <div className="rn-popover-item" onClick={() => { setMoreMenu(null); setModal({ type: "rename", path: file.path, folder: false }); }}><Pencil size={15} /> 이름 바꾸기</div>
+                      <div className="rn-popover-item rn-danger" onClick={() => { setMoreMenu(null); setModal({ type: "delete", path: file.path, folder: false }); }}><Trash2 size={15} /> 삭제</div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -580,29 +608,38 @@ export default function App() {
 
       {/* 오른쪽 사이드바 */}
       {rightOpen && (
+        <div className="rn-dock rn-dock-right">
+        <div className="rn-dock-head">
+          {rightViews.map(([id, icon, title]) => (
+            <button key={id} title={title} className={rightView === id ? "rn-current" : ""} onClick={() => setRightView(id)}>{icon}</button>
+          ))}
+          <span className="rn-grow" />
+          <button className="rn-dock-toggle" title="오른쪽 사이드바 접기" onClick={() => setRightOpen(false)}><PanelRight size={18} /></button>
+        </div>
         <aside className="sidebar right">
-          <div className="sidebar-tabs">
-            {rightViews.map(([id, icon, title]) => (
-              <button key={id} title={title} className={rightView === id ? "rn-current" : ""} onClick={() => setRightView(id)}>{icon}</button>
-            ))}
-          </div>
-          <div className="sidebar-title">{rightViews.find((v) => v[0] === rightView)![2]}{activeFile ? `: ${basename(activeFile.path)}` : ""}</div>
           <div className="sidebar-content">
             {rightView === "backlinks" && <BacklinksPanel files={files} path={activeFile?.path ?? null} onOpen={(p, line) => openFile(p, false, line != null ? "edit" : undefined, line)} />}
             {rightView === "outline" && <OutlinePanel content={activeFile?.content ?? null} onJump={jumpTo} />}
             {rightView === "graph" && (activeFile ? <div className="local-graph"><GraphView files={files} activePath={activeFile.path} localOnly onOpen={(path) => openFile(path, false)} /></div> : <div className="panel empty">열린 노트가 없습니다</div>)}
           </div>
         </aside>
+        </div>
       )}
 
       {/* 상태 표시줄 */}
       <footer className="rn-statusbar">
         {activeFile && stats && (
           <>
-            <span className="status-item clickable" onClick={() => (setRightOpen(true), setRightView("backlinks"))}>백링크 {backlinkCount}개</span>
-            <span className="status-item clickable" onClick={toggleMode}>{tab?.mode === "edit" ? (settings.livePreview ? "Live Preview" : "소스 모드") : "읽기 모드"}</span>
-            <span className="status-item">단어 {stats.words.toLocaleString()}개</span>
-            <span className="status-item">문자 {stats.chars.toLocaleString()}개</span>
+            <span className="status-item clickable" onClick={() => (setRightOpen(true), setRightView("backlinks"))}>{backlinkCount}개 백링크</span>
+            <span
+              className="status-item clickable status-icon"
+              title={tab?.mode === "edit" ? (settings.livePreview ? "현재 보기: Live Preview" : "현재 보기: 소스 모드") : "현재 보기: 읽기"}
+              onClick={toggleMode}
+            >
+              {tab?.mode === "edit" ? <Pencil size={15} /> : <BookOpen size={15} />}
+            </span>
+            <span className="status-item">{stats.words.toLocaleString()}개 단어</span>
+            <span className="status-item">{stats.chars.toLocaleString()}개 문자</span>
           </>
         )}
       </footer>

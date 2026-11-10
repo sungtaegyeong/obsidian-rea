@@ -33,7 +33,8 @@ interface TreeNode {
 }
 
 export default function FileExplorer(p: Props) {
-  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  // 볼트를 처음 열면 폴더는 접힌 상태로 시작한다 (원본 앱 관찰)
+  const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set(p.folders));
   const [sort, setSort] = useState<SortMode>("name-asc");
   const [sortOpen, setSortOpen] = useState(false);
   const [menu, setMenu] = useState<{ x: number; y: number; path: string; folder: boolean } | null>(null);

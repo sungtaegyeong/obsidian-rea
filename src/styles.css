@@ -126,7 +126,7 @@ kbd { font-family: var(--font-ui); font-size: 11px; padding: 1px 6px; border-rad
 .note-sizer { margin: 0 auto; }
 .readable .note-sizer { max-width: 700px; }
 
-.rn-note-title { width: 100%; background: none; border: none; outline: none; font-weight: 700; color: var(--text); padding: 0; margin: 0 0 24px; line-height: 1.2; letter-spacing: -0.015em; font-size: calc(var(--font-text-size) * 1.618); }
+.rn-note-title { width: 100%; background: none; border: none; outline: none; font-weight: 700; color: var(--text); padding: 0; margin: 0 0 14px; line-height: 1.2; letter-spacing: -0.015em; font-size: calc(var(--font-text-size) * 1.618); }
 
 /* ---------- 편집기 (CodeMirror) ---------- */
 .editor-host .cm-editor { background: transparent; font-size: var(--font-text-size); outline: none; }
@@ -150,7 +150,11 @@ kbd { font-family: var(--font-ui); font-size: 11px; padding: 1px 6px; border-rad
 .rn-md-quote { color: var(--text-muted); font-style: italic; }
 .rn-md-mark { color: var(--text-faint); }
 .cm-list { color: inherit; }
-.cm-task-checkbox { text-indent: 0; accent-color: var(--accent); width: 1em; height: 1em; margin: 0 0.45em 0 0; vertical-align: -0.12em; cursor: pointer; }
+/* 체크박스: 16px, 모서리 4px, 켜지면 강조색 바탕에 흰 체크 (원본 화면 관찰) */
+.cm-task-checkbox, .rn-reader input[type="checkbox"] { appearance: none; -webkit-appearance: none; text-indent: 0; width: 16px; height: 16px; margin: 0 0.45em 0 0; vertical-align: -0.15em; border: 1px solid var(--text-faint); border-radius: var(--radius); background: transparent; cursor: pointer; position: relative; flex: none; }
+.cm-task-checkbox:checked, .rn-reader input[type="checkbox"]:checked { background: var(--accent); border-color: var(--accent); }
+.cm-task-checkbox:checked::after, .rn-reader input[type="checkbox"]:checked::after { content: ""; position: absolute; left: 4.5px; top: 1.5px; width: 4px; height: 8px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
+.rn-lp .rn-task-line-done { text-decoration: line-through; color: var(--text-muted); }
 .cm-bullet { display: inline-block; width: 0.75em; text-indent: 0; color: var(--text-faint); font-weight: 700; }
 .editor-host .cm-line.rn-list-line { padding-left: 1.5em; text-indent: -1em; }
 .cm-code-block { font-family: var(--font-mono); font-size: 0.88em; }
@@ -178,8 +182,9 @@ kbd { font-family: var(--font-ui); font-size: 11px; padding: 1px 6px; border-rad
 .rn-reader pre code { background: none; padding: 0; }
 .rn-reader blockquote { margin: 0.8em 0; padding: 0.1em 1em; border-left: 3px solid var(--accent); color: var(--text-muted); }
 .rn-reader ul, .rn-reader ol { padding-left: 1.6em; }
-.rn-reader li:has(> input[type="checkbox"]) { list-style: none; margin-left: -1.3em; }
-.rn-reader input[type="checkbox"] { accent-color: var(--accent); margin-right: 0.5em; width: 1em; height: 1em; vertical-align: -0.1em; cursor: pointer; }
+.rn-reader li:has(> input[type="checkbox"]), .rn-reader li:has(> p > input[type="checkbox"]) { list-style: none; }
+.rn-reader li.rn-task.is-checked { text-decoration: line-through; color: var(--text-muted); }
+.rn-reader li.rn-task { margin-left: -1.1em; }
 .rn-reader table { border-collapse: collapse; margin: 1em 0; }
 .rn-reader th, .rn-reader td { border: 1px solid var(--border); padding: 6px 12px; }
 .rn-reader th { background: var(--bg-2); }

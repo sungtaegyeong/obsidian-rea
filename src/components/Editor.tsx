@@ -209,9 +209,11 @@ const headingLines = ViewPlugin.fromClass(
               done.add(line.from);
               b.add(line.from, line.from, Decoration.line({ class: `cm-line-h${Math.min(+m[1], 4)}` }));
             } else if (node.name === "ListItem") {
-              // 목록 줄: 줄이 넘치면 글머리표 뒤 글자 위치에 맞춰 들여쓴다
+              // 목록 줄: 줄이 넘치면 글머리표 뒤 글자 위치에 맞춰 들여쓴다. 완료한 할 일은 표시 클래스를 더한다
               done.add(line.from);
-              b.add(line.from, line.from, Decoration.line({ class: "rn-list-line" }));
+              const marker = node.node.getChild("Task")?.getChild("TaskMarker");
+              const checked = !!marker && /x/i.test(view.state.doc.sliceString(marker.from, marker.to));
+              b.add(line.from, line.from, Decoration.line({ class: checked ? "rn-list-line rn-task-line-done" : "rn-list-line" }));
             }
           },
         });

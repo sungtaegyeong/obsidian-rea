@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   FolderClosed, Search, Tags, Link2, ListTree, Waypoints, FileSearch, SquareTerminal, CalendarDays, Settings as SettingsIcon,
-  FolderOpen, PanelLeft, PanelRight, Plus, X, Columns2, BookOpen, Pencil, NotebookPen, FilePlus, ArrowLeft, ArrowRight,
+  FolderOpen, PanelLeft, PanelRight, Plus, X, Columns2, BookOpen, Pencil, NotebookPen, ArrowLeft, ArrowRight,
   ChevronsUpDown, Ellipsis, Trash2,
 } from "lucide-react";
 import Editor, { type EditorHandle } from "./components/Editor";
@@ -578,13 +578,13 @@ export default function App() {
                 </div>
               )}
 
-              {t.kind === "graph" && (
+              {(t.kind === "graph" || t.kind === "empty") && (
                 <div className="rn-view-top">
                   <div className="view-nav">
                     <button title="뒤로" disabled={!t.back?.length} onClick={() => navigate(pi, "back")}><ArrowLeft size={16} /></button>
                     <button title="앞으로" disabled={!t.fwd?.length} onClick={() => navigate(pi, "fwd")}><ArrowRight size={16} /></button>
                   </div>
-                  <div className="breadcrumb"><span>그래프 뷰</span></div>
+                  <div className="breadcrumb"><span>{t.kind === "graph" ? "그래프 뷰" : "새 탭"}</span></div>
                   <button className="rn-view-btn" title="다른 옵션" onClick={(e) => { e.stopPropagation(); setActivePane(pi); setMoreMenu(moreMenu === pi ? null : pi); }}>
                     <Ellipsis size={18} />
                   </button>
@@ -628,11 +628,9 @@ export default function App() {
                 {t.kind === "graph" && <GraphView files={files} activePath={activeFile?.path ?? null} onOpen={(path) => openFile(path, true)} />}
                 {t.kind === "empty" && (
                   <div className="rn-blank">
-                    <div className="rn-blank-title">새 탭</div>
-                    <div className="rn-blank-action" onClick={() => createNote("")}><FilePlus size={15} /> 새 노트 만들기 <kbd>{keyLabel(NATIVE ? "mod+n" : "mod+alt+n")}</kbd></div>
-                    <div className="rn-blank-action" onClick={() => setModal({ type: "switcher" })}><FileSearch size={15} /> 파일로 이동 <kbd>{keyLabel("mod+o")}</kbd></div>
-                    <div className="rn-blank-action" onClick={openGraph}><Waypoints size={15} /> 그래프 뷰 열기 <kbd>{keyLabel("mod+g")}</kbd></div>
-                    <div className="rn-blank-action" onClick={() => closeTab(pi, p.active)}><X size={15} /> 닫기</div>
+                    <button className="rn-blank-action" onClick={() => createNote("")}><Pencil size={18} /> <span>새 노트</span> <span className="rn-hotkey">{keyLabel(NATIVE ? "mod+n" : "mod+alt+n", true)}</span></button>
+                    <button className="rn-blank-action" onClick={openGraph}><Waypoints size={18} /> <span>그래프 뷰 열기</span> <span className="rn-hotkey">{keyLabel("mod+g", true)}</span></button>
+                    <button className="rn-blank-action" onClick={() => setModal({ type: "switcher" })}><Search size={18} /> <span>파일로 이동하기</span> <span className="rn-hotkey">{keyLabel("mod+o", true)}</span></button>
                   </div>
                 )}
               </div>

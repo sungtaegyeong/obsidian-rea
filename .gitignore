@@ -1,0 +1,13 @@
+# 분석 대상 사본과 REA 출력: 원본 앱에서 나온 파일은 올리지 않는다
+analysis/
+*.asar
+*.asar.unpacked/
+
+# 일반
+node_modules/
+dist/
+.DS_Store
+.env
+
+# 개인 도구 상태 (oh-my-claudecode)
+.omc/

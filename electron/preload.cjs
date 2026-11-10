@@ -2,6 +2,7 @@
 const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld("reaFs", {
+  frameless: process.platform === "darwin",
   pickVault: () => ipcRenderer.invoke("vault:pick"),
   load: (root) => ipcRenderer.invoke("vault:load", root),
   write: (root, p, c) => ipcRenderer.invoke("vault:write", root, p, c),

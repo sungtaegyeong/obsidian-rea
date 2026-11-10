@@ -53,6 +53,7 @@ function createWindow() {
     height: 900,
     title: "REA Notes",
     backgroundColor: "#1c1c1f",
+    ...(process.platform === "darwin" ? { titleBarStyle: "hidden", trafficLightPosition: { x: 14, y: 13 } } : {}),
     webPreferences: { preload: path.join(__dirname, "preload.cjs"), contextIsolation: true, nodeIntegration: false, sandbox: true },
   });
   win.setMenuBarVisibility(false);

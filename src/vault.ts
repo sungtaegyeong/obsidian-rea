@@ -134,6 +134,7 @@ export async function createBrowserVault(): Promise<VaultBackend> {
 
 // ---------- Electron (preload가 노출한 window.reaFs) ----------
 interface ReaFs {
+  frameless?: boolean;
   pickVault(): Promise<string | null>;
   load(root: string): Promise<VaultData>;
   write(root: string, path: string, content: string): Promise<void>;

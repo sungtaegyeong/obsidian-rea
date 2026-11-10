@@ -63,10 +63,10 @@ kbd { font-family: var(--font-ui); font-size: 11px; padding: 1px 6px; border-rad
 .app { display: flex; height: 100vh; }
 .ribbon { width: var(--ribbon-w); flex: none; background: var(--bg-2); border-right: 1px solid var(--border); display: flex; flex-direction: column; justify-content: space-between; padding: 8px 0; }
 .ribbon-top, .ribbon-bottom { display: flex; flex-direction: column; align-items: center; gap: 4px; }
-.ribbon button, .sidebar-tabs button, .nav-buttons button, .tab-actions button, .view-action, .toggle {
+.ribbon button, .sidebar-tabs button, .nav-buttons button, .tab-actions button, .view-action, .view-nav button, .toggle {
   background: none; border: none; color: var(--text-muted); padding: 6px; border-radius: var(--radius); display: inline-flex; align-items: center; justify-content: center;
 }
-.ribbon button:hover, .sidebar-tabs button:hover, .nav-buttons button:hover, .tab-actions button:hover, .view-action:hover, .toggle:hover { background: var(--bg-hover); color: var(--text); }
+.ribbon button:hover, .sidebar-tabs button:hover, .nav-buttons button:hover, .tab-actions button:hover, .view-action:hover, .view-nav button:hover:not(:disabled), .toggle:hover { background: var(--bg-hover); color: var(--text); }
 .sidebar-tabs button.is-active, .toggle.is-active { color: var(--accent); background: var(--bg-hover); }
 
 .sidebar { width: var(--sidebar-w); flex: none; background: var(--bg-2); display: flex; flex-direction: column; min-height: 0; }
@@ -97,8 +97,10 @@ kbd { font-family: var(--font-ui); font-size: 11px; padding: 1px 6px; border-rad
 .tab-new:hover { background: var(--bg-hover); }
 .tab-actions { display: flex; gap: 2px; padding-bottom: 4px; }
 
-.view-header { height: 40px; flex: none; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; }
-.breadcrumb { font-size: 13px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; text-align: center; }
+.view-header { height: 40px; flex: none; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; gap: 4px; }
+.breadcrumb { font-size: 13px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; padding-left: 8px; }
+.view-nav { display: flex; gap: 2px; }
+.view-nav button:disabled { opacity: 0.35; cursor: default; background: none; }
 .crumb-folder { color: var(--text-muted); }
 .view-content { flex: 1; min-height: 0; position: relative; display: flex; flex-direction: column; }
 .note-scroll { flex: 1; overflow: auto; padding: 8px 32px 120px; }
@@ -128,7 +130,9 @@ kbd { font-family: var(--font-ui); font-size: 11px; padding: 1px 6px; border-rad
 .cm-link, .cm-url { color: var(--accent); }
 .cm-quote { color: var(--text-muted); font-style: italic; }
 .cm-formatting { color: var(--text-faint); }
-.cm-list { color: var(--accent); }
+.cm-list { color: inherit; }
+.cm-task-checkbox { accent-color: var(--accent); width: 1em; height: 1em; margin: 0 0.45em 0 0; vertical-align: -0.12em; cursor: pointer; }
+.cm-bullet { display: inline-block; width: 1.1em; color: var(--text-muted); font-weight: 700; }
 .cm-code-block { font-family: var(--font-mono); font-size: 0.88em; }
 .cm-wikilink { color: var(--accent); cursor: pointer; }
 .is-source .cm-wikilink { text-decoration: none; }
@@ -293,3 +297,10 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   .start-card { flex-direction: column; }
   .start-brand { width: auto; border-right: none; border-bottom: 1px solid var(--border); }
 }
+
+/* ---------- 데스크톱(macOS): 창 제목 표시줄 없이 신호등 버튼만 ---------- */
+.is-frameless .ribbon { padding-top: 44px; }
+.is-frameless .tab-header, .is-frameless .sidebar-tabs { -webkit-app-region: drag; }
+.is-frameless .tab-header button, .is-frameless .tab, .is-frameless .sidebar-tabs button { -webkit-app-region: no-drag; }
+.is-frameless .sidebar.left .sidebar-tabs { padding-left: 40px; }
+.is-frameless .app.left-closed .pane:first-child .tab-header { padding-left: 40px; }

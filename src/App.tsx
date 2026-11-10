@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Files, Search, Tags, Link2, ListTree, Waypoints, FileSearch, SquareTerminal, CalendarDays, Settings as SettingsIcon,
-  FolderOpen, PanelLeft, PanelRight, Plus, X, Columns2, BookOpen, Pencil, NotebookPen, FilePlus,
+  FolderOpen, PanelLeft, PanelRight, Plus, X, Columns2, BookOpen, Pencil, NotebookPen, FilePlus, ArrowLeft, ArrowRight,
 } from "lucide-react";
 import Editor, { type EditorHandle } from "./components/Editor";
 import ReadingView, { type ReadingHandle } from "./components/ReadingView";
@@ -23,6 +23,8 @@ interface Tab {
   kind: TabKind;
   path?: string;
   mode: "edit" | "read";
+  back?: string[]; // 이 탭에서 이전에 연 노트들 (뒤로 가기)
+  fwd?: string[];
 }
 interface Pane {
   id: string;
@@ -45,6 +47,7 @@ const isMac = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigat
 const MOD = isMac ? "⌘" : "Ctrl+";
 // 브라우저는 ⌘T·⌘W·⌘N을 가로챌 수 없으므로 웹에서는 Alt 조합을 쓴다
 const NATIVE = electronSupported;
+if (typeof window !== "undefined" && window.reaFs?.frameless) document.documentElement.classList.add("is-frameless");
 const SAMPLE_KEY = "rea-notes:sample-vault";
 
 interface Command {
@@ -240,7 +243,13 @@ export default function App() {
       } else {
         const cur = p.tabs[p.active];
         const t: Tab = { ...cur, kind: "note", path, mode: mode ?? (cur.kind === "note" ? cur.mode : settings.defaultMode) };
-        if (cur.path !== path) t.id = uid();
+        if (cur.path !== path) {
+          t.id = uid();
+          if (cur.kind === "note" && cur.path) {
+            t.back = [...(cur.back ?? []), cur.path];
+            t.fwd = [];
+          }
+        }
         tabId = t.id;
         next = { ...p, tabs: p.tabs.map((x, k) => (k === p.active ? t : x)) };
       }
@@ -287,6 +296,22 @@ export default function App() {
   const setMode = (mode: "edit" | "read") => updatePane(activePane, (p) => ({ ...p, tabs: p.tabs.map((t, k) => (k === p.active ? { ...t, mode } : t)) }));
   const toggleMode = () => tab?.kind === "note" && setMode(tab.mode === "edit" ? "read" : "edit");
 
+  // 탭별 앞으로·뒤로 이동
+  const navigate = (pi: number, dir: "back" | "fwd") =>
+    updatePane(pi, (p) => ({
+      ...p,
+      tabs: p.tabs.map((t, k) => {
+        if (k !== p.active || !t.path) return t;
+        const from = dir === "back" ? t.back ?? [] : t.fwd ?? [];
+        const target = from[from.length - 1];
+        if (!target) return t;
+        const rest = from.slice(0, -1);
+        return dir === "back"
+          ? { ...t, id: uid(), path: target, back: rest, fwd: [...(t.fwd ?? []), t.path] }
+          : { ...t, id: uid(), path: target, fwd: rest, back: [...(t.back ?? []), t.path] };
+      }),
+    }));
+
   const openGraph = () => {
     const gi = pane?.tabs.findIndex((t) => t.kind === "graph") ?? -1;
     if (gi >= 0) updatePane(activePane, (p) => ({ ...p, active: gi }));
@@ -318,6 +343,8 @@ export default function App() {
     { id: "close-tab", name: "현재 탭 닫기", key: NATIVE ? "mod+w" : "mod+alt+w", run: () => pane && closeTab(activePane, pane.active) },
     { id: "split", name: "오른쪽으로 분할", key: "mod+\\", run: split },
     { id: "next-tab", name: "다음 탭으로 이동", run: () => updatePane(activePane, (p) => ({ ...p, active: (p.active + 1) % p.tabs.length })) },
+    { id: "back", name: "뒤로 가기", key: "mod+alt+arrowleft", run: () => navigate(activePane, "back") },
+    { id: "forward", name: "앞으로 가기", key: "mod+alt+arrowright", run: () => navigate(activePane, "fwd") },
     { id: "graph", name: "그래프 뷰 열기", key: "mod+g", run: openGraph },
     { id: "search", name: "전체 검색", key: "mod+shift+f", run: () => openSearch() },
     { id: "files", name: "파일 탐색기 보기", run: () => (setLeftOpen(true), setLeftView("files")) },
@@ -409,7 +436,7 @@ export default function App() {
   ];
 
   return (
-    <div className={`app${settings.readableWidth ? " readable" : ""}`}>
+    <div className={`app${settings.readableWidth ? " readable" : ""}${leftOpen ? "" : " left-closed"}`}>
       {/* 리본 */}
       <div className="ribbon">
         <div className="ribbon-top">
@@ -491,6 +518,10 @@ export default function App() {
 
               {t.kind === "note" && file && (
                 <div className="view-header">
+                  <div className="view-nav">
+                    <button title="뒤로" disabled={!t.back?.length} onClick={() => navigate(pi, "back")}><ArrowLeft size={16} /></button>
+                    <button title="앞으로" disabled={!t.fwd?.length} onClick={() => navigate(pi, "fwd")}><ArrowRight size={16} /></button>
+                  </div>
                   <div className="breadcrumb">
                     {dirname(file.path) && <span className="crumb-folder">{dirname(file.path).split("/").join(" / ")} / </span>}
                     <span>{basename(file.path)}</span>

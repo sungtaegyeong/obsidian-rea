@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { EditorState, Compartment, RangeSetBuilder, type Extension } from "@codemirror/state";
+import { WidgetType } from "@codemirror/view";
 import {
   EditorView,
   keymap,
@@ -76,6 +77,41 @@ const linkAndTagMarks = ViewPlugin.fromClass(
 
 // 실시간 미리보기: 커서가 없는 줄에서는 마크다운 기호(#, **, *, `, [[ ]])를 숨긴다
 const hide = Decoration.replace({});
+class BulletWidget extends WidgetType {
+  eq() {
+    return true;
+  }
+  toDOM() {
+    const el = document.createElement("span");
+    el.className = "cm-bullet";
+    el.textContent = "•";
+    return el;
+  }
+}
+const bullet = Decoration.replace({ widget: new BulletWidget() });
+// 할 일 체크박스: 클릭하면 [ ] ↔ [x]를 바꾼다
+class TaskWidget extends WidgetType {
+  constructor(readonly checked: boolean, readonly markerFrom: number) {
+    super();
+  }
+  eq(o: TaskWidget) {
+    return o.checked === this.checked && o.markerFrom === this.markerFrom;
+  }
+  toDOM(view: EditorView) {
+    const el = document.createElement("input");
+    el.type = "checkbox";
+    el.className = "cm-task-checkbox";
+    el.checked = this.checked;
+    el.addEventListener("mousedown", (e) => {
+      e.preventDefault();
+      view.dispatch({ changes: { from: this.markerFrom + 1, to: this.markerFrom + 2, insert: this.checked ? " " : "x" } });
+    });
+    return el;
+  }
+  ignoreEvent() {
+    return true;
+  }
+}
 const livePreviewPlugin = ViewPlugin.fromClass(
   class {
     decorations: DecorationSet;
@@ -93,6 +129,8 @@ const livePreviewPlugin = ViewPlugin.fromClass(
         for (let n = a; n <= z; n++) activeLines.add(n);
       }
       const ranges: [number, number][] = [];
+      const bullets: number[] = [];
+      const tasks: [number, number, Decoration][] = [];
       for (const { from, to } of view.visibleRanges) {
         syntaxTree(state).iterate({
           from,
@@ -106,6 +144,14 @@ const livePreviewPlugin = ViewPlugin.fromClass(
               ranges.push([node.from, end]);
             } else if (name === "EmphasisMark" || name === "StrikethroughMark") {
               ranges.push([node.from, node.to]);
+            } else if (name === "ListMark" && node.node.nextSibling?.name === "Task") {
+              const marker = node.node.nextSibling.firstChild;
+              if (marker?.name === "TaskMarker") {
+                const checked = /x/i.test(state.doc.sliceString(marker.from, marker.to));
+                tasks.push([node.from, marker.to, Decoration.replace({ widget: new TaskWidget(checked, marker.from) })]);
+              }
+            } else if (name === "ListMark" && node.node.parent?.parent?.name === "BulletList") {
+              bullets.push(node.from); // 글머리 기호(-, *, +)를 점으로 바꿔 보여준다
             } else if (name === "CodeMark" && node.node.parent?.name === "InlineCode") {
               ranges.push([node.from, node.to]);
             }
@@ -120,7 +166,7 @@ const livePreviewPlugin = ViewPlugin.fromClass(
         }
       }
       const b = new RangeSetBuilder<Decoration>();
-      ranges
+      const merged = ranges
         .sort((a, c) => a[0] - c[0] || a[1] - c[1])
         .reduce<[number, number][]>((acc, r) => {
           const last = acc[acc.length - 1];
@@ -128,7 +174,10 @@ const livePreviewPlugin = ViewPlugin.fromClass(
           else acc.push([...r]);
           return acc;
         }, [])
-        .forEach(([s, e]) => e > s && b.add(s, e, hide));
+        .filter(([s, e]) => e > s)
+        .map(([s, e]) => [s, e, hide] as [number, number, Decoration]);
+      const all = [...merged, ...tasks, ...bullets.map((s) => [s, s + 1, bullet] as [number, number, Decoration])];
+      all.sort((a, c) => a[0] - c[0]).forEach(([s, e, d]) => b.add(s, e, d));
       return b.finish();
     }
   },

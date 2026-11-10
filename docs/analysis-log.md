@@ -244,7 +244,7 @@
 | 크기 | 버튼 높이 약 38px, 글자 15px, 단축키는 알약 표시 | — | 값 맞춤. 버튼 폭은 우리 단축키 표시(⌘⌥N)가 길어 212px |
 
 ## [UI 스타일 값 참고]  (2026-11-11)
-CLAUDE.md 규칙 2의 예외에 따라 `analysis/extracted/1.15.0/app.css`(사본)에서 **숫자 값만** 확인했다. 선택자·변수 이름·규칙 블록은 옮기지 않았고, 우리 CSS(`src/styles.css`)의 자체 변수에 값만 적었다. 같은 작업으로, 원본 선택자와 이름이 같던 우리 클래스 50개를 `rn-*`로 바꿨다(커밋 `7bb2583`).
+CLAUDE.md 규칙 2의 예외에 따라 `analysis/extracted/1.15.0/app.css`(사본)에서 **숫자 값만** 확인했다. 선택자·변수 이름·규칙 블록은 옮기지 않았고, 우리 CSS(`src/styles.css`)의 자체 변수에 값만 적었다. 같은 작업으로, 원본 선택자와 이름이 같던 우리 클래스 50개를 `rn-*`로 바꿨다(커밋 `7bb2583`). 마지막 점검에서 원본 CSS 변수 이름과 같던 우리 변수 6개(`--text-muted`, `--text-faint`, `--font-text-size`, `--graph-node/line/text`)와 클래스 1개도 `--fg-*`, `--rn-*`로 바꿨다. 점검 시점에 원본과 이름이 같은 것은 CodeMirror 6 라이브러리 자체 클래스(`cm-editor`, `cm-content` 등 7개)뿐이다.
 
 ### 화면 1. 메인 작업 공간
 | 우리 CSS 위치 | 참고한 값 | 원본에서 그 값이 쓰이는 곳 (관찰 기준 설명) |
@@ -253,7 +253,7 @@ CLAUDE.md 규칙 2의 예외에 따라 `analysis/extracted/1.15.0/app.css`(사�
 | `--bg-2` | #282828 | 사이드바·리본·탭 줄·상태 표시줄 배경 |
 | `--bg-3`, `--border` | #333333 | 버튼 배경, 구분선 |
 | `--bg-hover` | 흰색 6.7% | 호버·선택 항목 배경 |
-| `--text` / `--text-muted` / `--text-faint` | #dadada / #b3b3b3 / #666666 | 본문 글자 / 흐린 글자 / 더 흐린 글자 |
+| `--text` / `--fg-muted` / `--fg-faint` | #dadada / #b3b3b3 / #666666 | 본문 글자 / 흐린 글자 / 더 흐린 글자 |
 | `--accent` | #8a5cf5 (hsl 258 88% 66%) | 기본 강조색 |
 | `--accent-text` | #a68af9 (강조색보다 명도 1.15배) → `color-mix` 73%+흰색으로 근사 | 링크·태그 글자 |
 | `--ribbon-w`, `--head-h` | 44px, 40px | 리본 폭, 머리줄 높이 |
@@ -297,7 +297,7 @@ CLAUDE.md 규칙 2의 예외에 따라 `analysis/extracted/1.15.0/app.css`(사�
 ### 화면 5. 그래프 뷰
 | 우리 CSS·코드 위치 | 참고한 값 | 비고 |
 | --- | --- | --- |
-| `--graph-node`, `--graph-line`, `--graph-text` | #a3a3a3, #3f3f3f, #dadada | 스크린샷에서 고른 근사 색 (원본 CSS 값이 아님) |
+| `--rn-graph-node`, `--rn-graph-line`, `--rn-graph-text` | #a3a3a3, #3f3f3f, #dadada | 스크린샷에서 고른 근사 색 (원본 CSS 값이 아님) |
 | `.rn-graph-panel` | 폭 240px, 모서리 8px, 섹션 제목 15px | 스크린샷에서 잼 |
 | `GraphView.tsx` `DEFAULTS` | — | 원본 장력 기본값(위 "기능별 분석"의 [그래프 뷰] 항목)은 단위가 달라 쓰지 않고, 화면 관찰로 새로 정함 |
 

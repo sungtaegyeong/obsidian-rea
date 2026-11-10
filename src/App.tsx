@@ -141,7 +141,7 @@ export default function App() {
     const r = document.documentElement;
     r.dataset.theme = settings.theme;
     r.style.setProperty("--accent", settings.accent);
-    r.style.setProperty("--font-text-size", settings.fontSize + "px");
+    r.style.setProperty("--rn-font-size", settings.fontSize + "px");
   }, [settings]);
 
   // ---------- 파일 조작 ----------
@@ -665,7 +665,7 @@ export default function App() {
           <>
             <span className="status-item clickable" onClick={() => (setRightOpen(true), setRightView("backlinks"))}>{backlinkCount}개 백링크</span>
             <span
-              className="status-item clickable status-icon"
+              className="status-item clickable status-glyph"
               title={tab?.mode === "edit" ? (settings.livePreview ? "현재 보기: Live Preview" : "현재 보기: 소스 모드") : "현재 보기: 읽기"}
               onClick={toggleMode}
             >

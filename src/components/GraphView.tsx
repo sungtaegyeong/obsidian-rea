@@ -126,7 +126,7 @@ export default function GraphView({ files, activePath, localOnly, onOpen }: Prop
       links.forEach((l) => {
         const s = l.source as Node, t = l.target as Node;
         const on = hover && (s.id === hover.id || t.id === hover.id);
-        ctx.strokeStyle = on ? color("--graph-accent") : color("--graph-line");
+        ctx.strokeStyle = on ? color("--rn-graph-accent") : color("--rn-graph-line");
         ctx.globalAlpha = near && !on ? 0.15 : 1;
         ctx.beginPath();
         ctx.moveTo(s.x!, s.y!);
@@ -136,12 +136,12 @@ export default function GraphView({ files, activePath, localOnly, onOpen }: Prop
       nodes.forEach((n) => {
         ctx.globalAlpha = dim(n.id) ? 0.2 : 1;
         ctx.fillStyle =
-          n.id === activePath || n === hover ? color("--graph-accent") : n.kind === "tag" ? color("--graph-tag") : n.kind === "unresolved" ? color("--graph-unresolved") : color("--graph-node");
+          n.id === activePath || n === hover ? color("--rn-graph-accent") : n.kind === "tag" ? color("--rn-graph-tag") : n.kind === "unresolved" ? color("--rn-graph-unresolved") : color("--rn-graph-node");
         ctx.beginPath();
         ctx.arc(n.x!, n.y!, radius(n), 0, Math.PI * 2);
         ctx.fill();
         if (view.k > 0.6 || n === hover || n.id === activePath) {
-          ctx.fillStyle = color("--graph-text");
+          ctx.fillStyle = color("--rn-graph-text");
           ctx.font = `${12 / Math.max(view.k, 0.8)}px sans-serif`;
           ctx.textAlign = "center";
           ctx.fillText(n.label, n.x!, n.y! + radius(n) + 14 / Math.max(view.k, 0.8));

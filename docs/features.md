@@ -1,8 +1,13 @@
-# 기능 목록과 구현 상태 (초안)
+# 기능 목록과 구현 상태
 
 - 분석 대상: Obsidian 앱 패키지 **1.15.0** (`analysis/asar/obsidian-1.15.0.asar`, SHA-256 `0e638330…9248`). 실행 버전을 판별한 근거는 [environment.md](environment.md)에 있다.
 - 분석 방법: REA 6.8.0 정적 분석과, `analysis/` 사본에서 꺼낸 파일의 식별자·문자열 검색. **앱을 실행해서 화면으로 확인한 것은 아직 없다.**
-- 작성일: 2026-11-10 · 상태: 초안. 구현은 아직 시작하지 않았다.
+- 작성일: 2026-11-10 · 구현 상태 갱신: 2026-11-11. 재구현 앱 REA Notes의 `src/` 코드를 읽고 판정했다.
+- 구현 상태 표기:
+  - **완료**: 계획한 1차 범위를 구현함.
+  - **부분 구현**: 일부만 구현함. 빠진 것을 한 줄로 적었다.
+  - **구현 안 함**: 구현하지 않음.
+- 판정은 코드를 읽고 내린 것이다. 원본 앱과 화면을 나란히 놓고 비교하지는 않았다.
 
 ## 판정 기준
 
@@ -41,20 +46,20 @@
 
 | 단계 | 기능 | 판정 | 근거 (식별자) | 아직 모르는 것 | 구현 상태 |
 | --- | --- | --- | --- | --- | --- |
-| 기본 | 파일·폴더 탐색기 | seen | view `file-explorer`, core plugin `file-explorer`(i18n 이름 "Files"). 명령 8개(`file-explorer:*`). 정렬 6종(이름 A–Z/Z–A, 수정·생성 시각 오름·내림차순). 새 노트/새 폴더/이름 바꾸기/삭제/복제/이동. 파일명 금지 문자 검사 메시지 | 드래그 앤 드롭 규칙, 삭제 동작(`file` 설정 탭의 `deleteOption`에서 `system` 휴지통 등) | 미착수 |
-| 기본 | 마크다운 편집 모드 | seen | view `markdown`, CSS 클래스 `markdown-source-view`, `cm-content`. `editor:` 명령 69개(굵게·기울임·목록·체크리스트·표·콜아웃·코드블록·각주·접기 등) | 편집기 엔진 버전 | 미착수 |
-| 기본 | 읽기 모드 | seen | CSS 클래스 `markdown-reading-view`, 명령 `editor:toggle-source`(모드 전환) | 렌더러 파이프라인, 마크다운 확장 문법(콜아웃·각주·주석·하이라이트)의 정확한 처리 규칙 | 미착수 |
-| 기본 | 전체 검색 | seen | view `search`, core plugin `global-search`, 명령 `global-search:open`. i18n 옵션: 대소문자 구분, 정규식, 속성 일치, 크게/작게/참/거짓/비었음 조건, "Explain search terms" | 검색 연산자 문법 전체, 인덱스 방식 | 미착수 |
-| 기본 | 빠른 전환 (Quick switcher) | seen | core plugin `switcher`, 명령 `switcher:open`, `app:show-tab-switcher` | 정렬과 퍼지 매칭 알고리즘 | 미착수 |
-| 기본 | 커맨드 팔레트 | seen | core plugin `command-palette`, 명령 `command-palette:open`. 등록 command id 197개(`app.js` 정적 집계) | 최근 사용 명령 정렬 규칙 | 미착수 |
-| 기본 | 탭·분할 화면 | seen | `workspace:` 명령 23개: 새 탭, 다음/이전 탭, 닫기, 다른 탭 닫기, 수직/수평 분할, 고정(pin), 쌓인 탭(stacked), 닫은 탭 되살리기, 새 창으로 이동 | 레이아웃 직렬화 형식(`workspace.json` 등은 inferred) | 미착수 |
-| 기본 | 설정 | seen | 설정 탭 9개(2절). `editor` 탭의 Vim 관련 `passedVimTest` 필드 | 설정 항목 전체와 기본값 | 미착수 |
-| 심화 | `[[링크]]` | seen | 명령 `editor:insert-wikilink`, `editor:follow-link`, `editor:open-link-in-new-leaf/split/window`. 파일 탐색기 메시지 "Links will not work with file names containing…" | 링크 해석 규칙(경로/별칭/헤딩/블록 참조) | 미착수 |
-| 심화 | 백링크 | seen | view `backlink`, core plugin `backlink`(i18n: "별도 view 또는 노트 하단에 표시"), 명령 `backlink:*` 3개 | 링크 인덱스 갱신 시점(`worker.js` 관여는 inferred) | 미착수 |
-| 심화 | 나가는 링크 / 링크 안 된 언급 | seen | view `outgoing-link`, core plugin `outgoing-link`(i18n: "unlinked mentions" 감지) | 언급 매칭 규칙 | 미착수 |
-| 심화 | 실시간 미리보기 (Live Preview) | seen (식별자) / inferred (동작) | `app.js`의 `livePreview` 14회, CSS `is-live-preview` 1회 | 커서 위치에 따라 마크업을 숨기고 보이는 규칙. 런타임 관찰 필요 | 미착수 |
-| 도전 | 그래프 뷰 (전체·로컬) | seen | view `graph`, `localgraph`, core plugin `graph`, 명령 `graph:*` 3개. `sim.js` 워커("Graph Worker"), `lib/pixi.min.js` 7.2.4 로드 | 힘 시뮬레이션 파라미터, 필터·그룹 설정 | 미착수 |
-| 도전 | 캔버스 | seen | view `canvas`, core plugin `canvas`, 확장자 `.canvas` 등록(`registerExtensions([rl],fC)`, `rl="canvas"`), 명령 `canvas:*` 4개 | `.canvas` 파일 스키마(JSON으로 inferred), 노드·엣지 종류 | 미착수 |
+| 기본 | 파일·폴더 탐색기 | seen | view `file-explorer`, core plugin `file-explorer`(i18n 이름 "Files"). 명령 8개(`file-explorer:*`). 정렬 6종(이름 A–Z/Z–A, 수정·생성 시각 오름·내림차순). 새 노트/새 폴더/이름 바꾸기/삭제/복제/이동. 파일명 금지 문자 검사 메시지 | 드래그 앤 드롭 규칙, 삭제 동작(`file` 설정 탭의 `deleteOption`에서 `system` 휴지통 등) | **부분 구현**. 삭제가 휴지통(`.trash`) 이동 없이 바로 지워지고, 정렬 선택이 저장되지 않음 (`FileExplorer.tsx`, `vault.ts`) |
+| 기본 | 마크다운 편집 모드 | seen | view `markdown`, CSS 클래스 `markdown-source-view`, `cm-content`. `editor:` 명령 69개(굵게·기울임·목록·체크리스트·표·콜아웃·코드블록·각주·접기 등) | 편집기 엔진 버전 | **부분 구현**. CodeMirror 6 편집은 되지만 서식 명령(굵게·목록·체크리스트 토글 단축키 등)이 없음 (`Editor.tsx`) |
+| 기본 | 읽기 모드 | seen | CSS 클래스 `markdown-reading-view`, 명령 `editor:toggle-source`(모드 전환) | 렌더러 파이프라인, 마크다운 확장 문법(콜아웃·각주·주석·하이라이트)의 정확한 처리 규칙 | **부분 구현**. 콜아웃·각주·`==하이라이트==`·임베드·수식을 렌더링하지 않음 (markdown-it 기본 + 위키링크·태그·체크박스만, `markdown.ts`) |
+| 기본 | 전체 검색 | seen | view `search`, core plugin `global-search`, 명령 `global-search:open`. i18n 옵션: 대소문자 구분, 정규식, 속성 일치, 크게/작게/참/거짓/비었음 조건, "Explain search terms" | 검색 연산자 문법 전체, 인덱스 방식 | **부분 구현**. 연산자는 `tag:` `file:` `path:`를 하나씩만 쓸 수 있고, 조합·`-` 제외·따옴표 구문·`content:`/`line:`/`section:`은 없음 (`SidePanels.tsx`) |
+| 기본 | 빠른 전환 (Quick switcher) | seen | core plugin `switcher`, 명령 `switcher:open`, `app:show-tab-switcher` | 정렬과 퍼지 매칭 알고리즘 | **완료**. 자체 퍼지 점수, 수정 시각 순 기본 정렬, 없는 이름이면 새 노트, Ctrl/⌘+Enter로 새 탭 (`Modals.tsx`, `App.tsx`) |
+| 기본 | 커맨드 팔레트 | seen | core plugin `command-palette`, 명령 `command-palette:open`. 등록 command id 197개(`app.js` 정적 집계) | 최근 사용 명령 정렬 규칙 | **부분 구현**. 명령 25개와 단축키 표시는 되지만, 최근 사용 명령을 기억하지 않음 (`App.tsx`) |
+| 기본 | 탭·분할 화면 | seen | `workspace:` 명령 23개: 새 탭, 다음/이전 탭, 닫기, 다른 탭 닫기, 수직/수평 분할, 고정(pin), 쌓인 탭(stacked), 닫은 탭 되살리기, 새 창으로 이동 | 레이아웃 직렬화 형식(`workspace.json` 등은 inferred) | **부분 구현**. 분할은 오른쪽(세로) 방향만 되고, 탭·분할 레이아웃이 저장되지 않아 새로 열면 초기화됨 (`App.tsx`) |
+| 기본 | 설정 | seen | 설정 탭 9개(2절). `editor` 탭의 Vim 관련 `passedVimTest` 필드 | 설정 항목 전체와 기본값 | **부분 구현**. 탭은 4개(편집기·외관·단축키·정보)이고, 단축키는 보기만 할 수 있으며, 설정은 볼트 폴더가 아니라 브라우저 localStorage에 저장됨 (`SettingsModal.tsx`) |
+| 심화 | `[[링크]]` | seen | 명령 `editor:insert-wikilink`, `editor:follow-link`, `editor:open-link-in-new-leaf/split/window`. 파일 탐색기 메시지 "Links will not work with file names containing…" | 링크 해석 규칙(경로/별칭/헤딩/블록 참조) | **부분 구현**. 별칭 표시, 없는 노트 자동 생성, 이름 변경 시 링크 갱신은 되지만 `[[노트#헤딩]]`은 헤딩 위치로 이동하지 않음 (`markdown.ts`, `App.tsx`) |
+| 심화 | 백링크 | seen | view `backlink`, core plugin `backlink`(i18n: "별도 view 또는 노트 하단에 표시"), 명령 `backlink:*` 3개 | 링크 인덱스 갱신 시점(`worker.js` 관여는 inferred) | **완료**. 연결된 언급 패널, 상태 표시줄 백링크 개수, 줄 클릭 이동 (`SidePanels.tsx`) |
+| 심화 | 나가는 링크 / 링크 안 된 언급 | seen | view `outgoing-link`, core plugin `outgoing-link`(i18n: "unlinked mentions" 감지) | 언급 매칭 규칙 | **부분 구현**. "연결되지 않은 언급"은 백링크 패널에 있지만, 나가는 링크 목록 뷰는 없음 (`SidePanels.tsx`) |
+| 심화 | 실시간 미리보기 (Live Preview) | seen (식별자) / inferred (동작) | `app.js`의 `livePreview` 14회, CSS `is-live-preview` 1회 | 커서 위치에 따라 마크업을 숨기고 보이는 규칙. 런타임 관찰 필요 | **부분 구현**. 커서가 없는 줄의 `#`·`**`·`*`·`~~`·`` ` ``·`[[ ]]` 기호만 숨기고, 링크·이미지·표·체크박스는 위젯으로 렌더링하지 않음 (`Editor.tsx`) |
+| 도전 | 그래프 뷰 (전체·로컬) | seen | view `graph`, `localgraph`, core plugin `graph`, 명령 `graph:*` 3개. `sim.js` 워커("Graph Worker"), `lib/pixi.min.js` 7.2.4 로드 | 힘 시뮬레이션 파라미터, 필터·그룹 설정 | **완료**. d3-force + Canvas 2D, 전체·로컬(깊이 1) 그래프, 드래그·확대·이동, 호버 강조, 태그·없는 노트·고립 노트 필터, 클릭으로 열기. 힘 파라미터 조절 UI는 없음 (`GraphView.tsx`) |
+| 도전 | 캔버스 | seen | view `canvas`, core plugin `canvas`, 확장자 `.canvas` 등록(`registerExtensions([rl],fC)`, `rl="canvas"`), 명령 `canvas:*` 4개 | `.canvas` 파일 스키마(JSON으로 inferred), 노드·엣지 종류 | **구현 안 함 (시간 부족)**. [failures.md](failures.md) 참고 |
 
 ## 4. 그 밖의 코어 플러그인 (재구현 범위 결정 필요)
 

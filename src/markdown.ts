@@ -55,7 +55,9 @@ export function parseHeadings(content: string): Heading[] {
 
 export function countWords(content: string): { words: number; chars: number } {
   const text = content.replace(/```[\s\S]*?```/g, "").trim();
-  return { words: text ? text.split(/\s+/).length : 0, chars: content.length };
+  // 단어 = 라틴 글자·숫자 덩어리 또는 한글 덩어리 (예: "MCP로" → 2개). 원본 상태 표시줄 값과 대조한 근사 규칙
+  const words = text ? [...text.matchAll(/[A-Za-z0-9]+|\p{Script=Hangul}+|[\p{L}\p{N}]+/gu)].length : 0;
+  return { words, chars: content.length };
 }
 
 // 링크 이름 → 파일 경로 (경로 일치 우선, 그다음 파일 이름 일치)

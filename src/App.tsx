@@ -558,7 +558,7 @@ export default function App() {
                     <button title="앞으로" disabled={!t.fwd?.length} onClick={() => navigate(pi, "fwd")}><ArrowRight size={16} /></button>
                   </div>
                   <div className="breadcrumb">
-                    {dirname(file.path) && <span className="crumb-folder">{dirname(file.path).split("/").join(" / ")} / </span>}
+                    {dirname(file.path) && <><span className="crumb-folder">{dirname(file.path).split("/").join(" / ")}</span><span className="crumb-sep">&nbsp;/&nbsp;</span></>}
                     <span>{basename(file.path)}</span>
                   </div>
                   <button className="rn-view-btn" title={`${t.mode === "edit" ? "읽기 보기로" : "편집 보기로"} 전환 (${keyLabel("mod+e")})`} onClick={() => updatePane(pi, (q) => ({ ...q, tabs: q.tabs.map((y, k) => (k === q.active ? { ...y, mode: y.mode === "edit" ? "read" : "edit" } : y)) }))}>

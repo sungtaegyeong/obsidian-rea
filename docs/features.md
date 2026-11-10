@@ -1,7 +1,7 @@
 # 기능 목록과 구현 상태
 
 - 분석 대상: Obsidian 앱 패키지 **1.15.0** (`analysis/asar/obsidian-1.15.0.asar`, SHA-256 `0e638330…9248`). 실행 버전을 판별한 근거는 [environment.md](environment.md)에 있다.
-- 분석 방법: REA 6.8.0 정적 분석과, `analysis/` 사본에서 꺼낸 파일의 식별자·문자열 검색. **앱을 실행해서 화면으로 확인한 것은 아직 없다.**
+- 분석 방법: REA 6.8.0 정적 분석과, `analysis/` 사본에서 꺼낸 파일의 식별자·문자열 검색. 처음 판정은 정적 근거만으로 했고, 2026-11-11에 원본 앱과 REA Notes를 같은 샘플 볼트로 나란히 실행해 화면을 비교했다 ([analysis-log.md](analysis-log.md)의 [나란히 비교: 화면별 차이 목록]).
 - 작성일: 2026-11-10 · 구현 상태 갱신: 2026-11-11. 재구현 앱 REA Notes의 `src/` 코드를 읽고 판정했다.
 - 구현 상태 표기:
   - **완료**: 계획한 1차 범위를 구현함.
@@ -57,7 +57,7 @@
 | 심화 | `[[링크]]` | seen | 명령 `editor:insert-wikilink`, `editor:follow-link`, `editor:open-link-in-new-leaf/split/window`. 파일 탐색기 메시지 "Links will not work with file names containing…" | 링크 해석 규칙(경로/별칭/헤딩/블록 참조) | **부분 구현**. 별칭 표시, 없는 노트 자동 생성, 이름 변경 시 링크 갱신은 되지만 `[[노트#헤딩]]`은 헤딩 위치로 이동하지 않음 (`markdown.ts`, `App.tsx`) |
 | 심화 | 백링크 | seen | view `backlink`, core plugin `backlink`(i18n: "별도 view 또는 노트 하단에 표시"), 명령 `backlink:*` 3개 | 링크 인덱스 갱신 시점(`worker.js` 관여는 inferred) | **완료**. 연결된 언급 패널, 상태 표시줄 백링크 개수, 줄 클릭 이동 (`SidePanels.tsx`) |
 | 심화 | 나가는 링크 / 링크 안 된 언급 | seen | view `outgoing-link`, core plugin `outgoing-link`(i18n: "unlinked mentions" 감지) | 언급 매칭 규칙 | **부분 구현**. "연결되지 않은 언급"은 백링크 패널에 있지만, 나가는 링크 목록 뷰는 없음 (`SidePanels.tsx`) |
-| 심화 | 실시간 미리보기 (Live Preview) | seen (식별자) / inferred (동작) | `app.js`의 `livePreview` 14회, CSS `is-live-preview` 1회 | 커서 위치에 따라 마크업을 숨기고 보이는 규칙. 런타임 관찰 필요 | **부분 구현**. 커서가 없는 줄의 `#`·`**`·`*`·`~~`·`` ` ``·`[[ ]]` 기호만 숨기고, 링크·이미지·표·체크박스는 위젯으로 렌더링하지 않음 (`Editor.tsx`) |
+| 심화 | 실시간 미리보기 (Live Preview) | seen (식별자) / inferred (동작) | `app.js`의 `livePreview` 14회, CSS `is-live-preview` 1회 | 커서 위치에 따라 마크업을 숨기고 보이는 규칙. 런타임 관찰 필요 | **부분 구현**. 커서가 없는 줄의 `#`·`**`·`*`·`~~`·`` ` ``·`[[ ]]` 기호를 숨기고, 목록 기호는 점(•), `- [ ]`는 클릭할 수 있는 체크박스로 보여 줌. 이미지·표·콜아웃·임베드는 위젯으로 렌더링하지 않음 (`Editor.tsx`) |
 | 도전 | 그래프 뷰 (전체·로컬) | seen | view `graph`, `localgraph`, core plugin `graph`, 명령 `graph:*` 3개. `sim.js` 워커("Graph Worker"), `lib/pixi.min.js` 7.2.4 로드 | 힘 시뮬레이션 파라미터, 필터·그룹 설정 | **완료**. d3-force + Canvas 2D, 전체·로컬(깊이 1) 그래프, 드래그·확대·이동, 호버 강조, 태그·없는 노트·고립 노트 필터, 클릭으로 열기. 힘 파라미터 조절 UI는 없음 (`GraphView.tsx`) |
 | 도전 | 캔버스 | seen | view `canvas`, core plugin `canvas`, 확장자 `.canvas` 등록(`registerExtensions([rl],fC)`, `rl="canvas"`), 명령 `canvas:*` 4개 | `.canvas` 파일 스키마(JSON으로 inferred), 노드·엣지 종류 | **구현 안 함 (시간 부족)**. [failures.md](failures.md) 참고 |
 

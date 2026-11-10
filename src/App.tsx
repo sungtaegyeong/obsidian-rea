@@ -540,6 +540,7 @@ export default function App() {
                       onClick={() => updatePane(pi, (q) => ({ ...q, active: ti }))}
                       onAuxClick={(e) => e.button === 1 && closeTab(pi, ti)}
                     >
+                      {x.kind === "graph" && <Waypoints size={15} className="tab-icon" />}
                       <span className="tab-title">{x.kind === "graph" ? "그래프 뷰" : x.kind === "empty" ? "새 탭" : basename(x.path!)}</span>
                       <button className="tab-close" onClick={(e) => { e.stopPropagation(); closeTab(pi, ti); }}><X size={13} /></button>
                     </div>
@@ -577,6 +578,23 @@ export default function App() {
                 </div>
               )}
 
+              {t.kind === "graph" && (
+                <div className="rn-view-top">
+                  <div className="view-nav">
+                    <button title="뒤로" disabled={!t.back?.length} onClick={() => navigate(pi, "back")}><ArrowLeft size={16} /></button>
+                    <button title="앞으로" disabled={!t.fwd?.length} onClick={() => navigate(pi, "fwd")}><ArrowRight size={16} /></button>
+                  </div>
+                  <div className="breadcrumb"><span>그래프 뷰</span></div>
+                  <button className="rn-view-btn" title="다른 옵션" onClick={(e) => { e.stopPropagation(); setActivePane(pi); setMoreMenu(moreMenu === pi ? null : pi); }}>
+                    <Ellipsis size={18} />
+                  </button>
+                  {moreMenu === pi && (
+                    <div className="rn-popover rn-more-menu" onMouseDown={(e) => e.stopPropagation()}>
+                      <div className="rn-popover-item" onClick={() => { setMoreMenu(null); split(); }}><Columns2 size={15} /> 오른쪽으로 분할</div>
+                    </div>
+                  )}
+                </div>
+              )}
               <div className="rn-view-body">
                 {t.kind === "note" && file && (
                   <div className="note-scroll">

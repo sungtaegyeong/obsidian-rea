@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { ChevronDown, ChevronRight, RotateCcw, X, Settings } from "lucide-react";
 import { forceSimulation, forceLink, forceManyBody, forceCenter, forceCollide, forceX, forceY, type SimulationNodeDatum } from "d3-force";
 import { basename, type NoteFile } from "../vault";
 import { parseWikiLinks, parseTags, resolveLink } from "../markdown";
@@ -21,8 +22,16 @@ interface Props {
   onOpen(path: string): void;
 }
 
+// 표시·장력 기본값 (값은 우리가 d3-force에 맞춰 정함)
+const DEFAULTS = { nodeSize: 1, lineSize: 1, center: 0.1, repel: 260, linkStrength: 0.7, linkDistance: 120 };
+type Opts = typeof DEFAULTS;
+
 export default function GraphView({ files, activePath, localOnly, onOpen }: Props) {
   const canvas = useRef<HTMLCanvasElement>(null);
+  const [opts, setOpts] = useState<Opts>(DEFAULTS);
+  const [panelOpen, setPanelOpen] = useState(true);
+  const [openSec, setOpenSec] = useState<Set<string>>(new Set());
+  const toggleSec = (k: string) => setOpenSec((s) => { const n = new Set(s); n.has(k) ? n.delete(k) : n.add(k); return n; });
   const [showTags, setShowTags] = useState(false);
   const [showOrphans, setShowOrphans] = useState(true);
   const [showUnresolved, setShowUnresolved] = useState(false);
@@ -94,16 +103,16 @@ export default function GraphView({ files, activePath, localOnly, onOpen }: Prop
     ro.observe(c.parentElement!);
 
     const sim = forceSimulation<Node>(nodes)
-      .force("link", forceLink<Node, Link>(links).id((d) => d.id).distance(70))
-      .force("charge", forceManyBody().strength(-180))
+      .force("link", forceLink<Node, Link>(links).id((d) => d.id).distance(opts.linkDistance).strength(opts.linkStrength))
+      .force("charge", forceManyBody().strength(-opts.repel))
       .force("center", forceCenter(0, 0))
-      .force("collide", forceCollide(18))
-      .force("x", forceX(0).strength(0.06))
-      .force("y", forceY(0).strength(0.06));
+      .force("collide", forceCollide(10))
+      .force("x", forceX(0).strength(opts.center))
+      .force("y", forceY(0).strength(opts.center));
 
     const css = getComputedStyle(c);
     const color = (name: string) => css.getPropertyValue(name).trim();
-    const radius = (n: Node) => 4 + Math.sqrt(n.degree) * 2.2;
+    const radius = (n: Node) => (3 + Math.sqrt(n.degree) * 0.9) * opts.nodeSize;
     const neighbors = (n: Node) => new Set(links.flatMap((l) => ((l.source as Node).id === n.id ? [(l.target as Node).id] : (l.target as Node).id === n.id ? [(l.source as Node).id] : [])));
 
     function draw() {
@@ -113,7 +122,7 @@ export default function GraphView({ files, activePath, localOnly, onOpen }: Prop
       ctx.setTransform(dpr * view.k, 0, 0, dpr * view.k, w / 2 + view.x * dpr, h / 2 + view.y * dpr);
       const near = hover ? neighbors(hover) : null;
       const dim = (id: string) => near && hover!.id !== id && !near.has(id);
-      ctx.lineWidth = 1 / view.k;
+      ctx.lineWidth = opts.lineSize / view.k;
       links.forEach((l) => {
         const s = l.source as Node, t = l.target as Node;
         const on = hover && (s.id === hover.id || t.id === hover.id);
@@ -206,17 +215,64 @@ export default function GraphView({ files, activePath, localOnly, onOpen }: Prop
       window.removeEventListener("mouseup", up);
       c.removeEventListener("wheel", wheel);
     };
-  }, [graph, activePath, onOpen, localOnly]);
+  }, [graph, activePath, onOpen, localOnly, opts]);
 
   return (
     <div className="rn-graph">
       <canvas ref={canvas} />
-      <div className="rn-graph-panel">
-        <input className="search-input" placeholder="파일 이름으로 필터…" value={filter} onChange={(e) => setFilter(e.target.value)} />
-        <label><input type="checkbox" checked={showTags} onChange={(e) => setShowTags(e.target.checked)} /> 태그 표시</label>
-        <label><input type="checkbox" checked={showUnresolved} onChange={(e) => setShowUnresolved(e.target.checked)} /> 없는 노트 표시</label>
-        <label><input type="checkbox" checked={showOrphans} onChange={(e) => setShowOrphans(e.target.checked)} /> 연결 없는 노트 표시</label>
-      </div>
+      {panelOpen ? (
+        <div className="rn-graph-panel">
+          {([
+            ["filter", "필터", (
+              <>
+                <input className="search-input" placeholder="파일 이름으로 필터…" value={filter} onChange={(e) => setFilter(e.target.value)} />
+                <label><span>태그</span><input type="checkbox" checked={showTags} onChange={(e) => setShowTags(e.target.checked)} /></label>
+                <label><span>존재하지 않는 파일</span><input type="checkbox" checked={showUnresolved} onChange={(e) => setShowUnresolved(e.target.checked)} /></label>
+                <label><span>연결 없는 파일</span><input type="checkbox" checked={showOrphans} onChange={(e) => setShowOrphans(e.target.checked)} /></label>
+              </>
+            )],
+            ["display", "표시", (
+              <>
+                <Slider label="노드 크기" min={0.5} max={3} step={0.1} value={opts.nodeSize} set={(v) => setOpts({ ...opts, nodeSize: v })} />
+                <Slider label="링크 두께" min={0.5} max={4} step={0.1} value={opts.lineSize} set={(v) => setOpts({ ...opts, lineSize: v })} />
+              </>
+            )],
+            ["forces", "장력", (
+              <>
+                <Slider label="중심력" min={0} max={0.5} step={0.01} value={opts.center} set={(v) => setOpts({ ...opts, center: v })} />
+                <Slider label="반발력" min={0} max={800} step={10} value={opts.repel} set={(v) => setOpts({ ...opts, repel: v })} />
+                <Slider label="링크 장력" min={0} max={1} step={0.05} value={opts.linkStrength} set={(v) => setOpts({ ...opts, linkStrength: v })} />
+                <Slider label="링크 거리" min={30} max={300} step={5} value={opts.linkDistance} set={(v) => setOpts({ ...opts, linkDistance: v })} />
+              </>
+            )],
+          ] as [string, string, React.ReactNode][]).map(([key, title, body], i) => (
+            <div key={key} className="rn-graph-sec">
+              <div className="rn-graph-sec-head" onClick={() => toggleSec(key)}>
+                {openSec.has(key) ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                <span>{title}</span>
+                {i === 0 && (
+                  <span className="rn-graph-sec-actions" onClick={(e) => e.stopPropagation()}>
+                    <button title="기본값으로 되돌리기" onClick={() => { setOpts(DEFAULTS); setFilter(""); setShowTags(false); setShowUnresolved(false); setShowOrphans(true); }}><RotateCcw size={16} /></button>
+                    <button title="닫기" onClick={() => setPanelOpen(false)}><X size={16} /></button>
+                  </span>
+                )}
+              </div>
+              {openSec.has(key) && <div className="rn-graph-sec-body">{body}</div>}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <button className="rn-graph-open" title="그래프 설정 열기" onClick={() => setPanelOpen(true)}><Settings size={18} /></button>
+      )}
     </div>
+  );
+}
+
+function Slider({ label, min, max, step, value, set }: { label: string; min: number; max: number; step: number; value: number; set(v: number): void }) {
+  return (
+    <label className="rn-graph-slider">
+      <span>{label}</span>
+      <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => set(+e.target.value)} />
+    </label>
   );
 }

@@ -26,9 +26,9 @@
   --code-bg: #262626;
   --mark: rgba(255, 208, 0, 0.28);
   --shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
-  --graph-node: #8d8d96;
-  --graph-line: #44444b;
-  --graph-text: #c8c8ce;
+  --graph-node: #a3a3a3;
+  --graph-line: #3f3f3f;
+  --graph-text: #dadada;
   --graph-tag: #5fb38a;
   --graph-unresolved: #5a5a62;
   color-scheme: dark;
@@ -243,11 +243,22 @@ kbd { font-family: var(--font-ui); font-size: 11px; padding: 1px 6px; border-rad
 /* ---------- 그래프 ---------- */
 .rn-graph { position: absolute; inset: 0; overflow: hidden; }
 .rn-graph canvas { display: block; cursor: grab; }
-.rn-graph-panel { position: absolute; top: 10px; right: 10px; width: 220px; background: var(--bg-2); border: 1px solid var(--border); border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; color: var(--text-muted); box-shadow: var(--shadow); }
-.rn-graph-panel label { display: flex; gap: 6px; align-items: center; cursor: pointer; }
-.rn-graph-panel input[type="checkbox"] { accent-color: var(--accent); }
+.rn-graph-panel { position: absolute; top: 12px; right: 12px; width: 240px; background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius-lg); font-size: 13px; color: var(--text-muted); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2); overflow: hidden; }
+.rn-graph-sec { border-top: 1px solid var(--border); }
+.rn-graph-sec:first-child { border-top: none; }
+.rn-graph-sec-head { display: flex; align-items: center; gap: 8px; padding: 10px 12px; cursor: pointer; color: var(--text); font-size: 15px; }
+.rn-graph-sec-head svg { color: var(--text-faint); }
+.rn-graph-sec-actions { margin-left: auto; display: flex; gap: 4px; }
+.rn-graph-sec-actions button, .rn-graph-open { background: none; border: none; color: var(--text-muted); padding: 3px; border-radius: var(--radius); display: flex; }
+.rn-graph-sec-actions button:hover, .rn-graph-open:hover { background: var(--bg-hover); color: var(--text); }
+.rn-graph-open { position: absolute; top: 12px; right: 12px; padding: 6px; }
+.rn-graph-sec-body { padding: 0 12px 12px 34px; display: flex; flex-direction: column; gap: 8px; }
+.rn-graph-sec-body label { display: flex; justify-content: space-between; gap: 8px; align-items: center; cursor: pointer; }
+.rn-graph-sec-body input[type="checkbox"], .rn-graph-slider input { accent-color: var(--accent); }
+.rn-graph-slider { flex-direction: column; align-items: stretch !important; gap: 4px !important; }
+.tab-icon { flex: none; color: var(--text-muted); }
 .local-graph { position: relative; flex: 1; min-height: 300px; }
-.local-graph .rn-graph-panel { display: none; }
+.local-graph .rn-graph-panel, .local-graph .rn-graph-open { display: none; }
 
 /* ---------- 빈 탭 ---------- */
 .rn-blank { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: var(--text-muted); }

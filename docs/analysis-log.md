@@ -14,3 +14,132 @@
 - INFERRED: 내장 `obsidian.asar`는 업데이트를 불러오지 못했을 때 쓰는 예비본이다(로더의 오류 대화상자 문자열 근거).
 - UNKNOWN: REA가 `BrowserWindow` 생성을 0건으로 집계했다. `new r.BrowserWindow` 별칭을 따라가지 못한 것이다. 창의 webPreferences는 아직 확인하지 않았다.
 - 구현 방침: 분석 대상은 1.15.0으로 고정한다. 재구현에서는 로더·자동 업데이트 구조를 만들지 않는다.
+
+---
+
+# 기능별 분석 (2026-11-11, REA 6.8.0)
+
+**공통 조건**
+- 대상: `analysis/asar/obsidian-1.15.0.asar` 사본 하나뿐이다(SHA-256 `0e638330…9248`).
+- REA 근거: `analyze_javascript_application`에서 `app.js`, `worker.js`, `sim.js`, `main.js`만 골라 분석했다(parent `ev_b0fb3093…`). 결과는 `analysis/rea/mcp-session-2026-11-11.evidence.json`에 있다. 기능 이름을 seed로 넣은 `trace_application_feature`(예: `"file-explorer"`)는 `no-match`였다(`ev_acfef9f4…`).
+- 근거 표기:
+  - **[REA]**: REA Evidence의 노드나 관계에 실제로 있는 것.
+  - **[문자열]**: REA가 그래프 노드로 잡지 못해 사본에서 꺼낸 파일(`analysis/extracted/1.15.0/`)을 정규식으로 검색해 찾은 것. 이것도 정적 근거일 뿐이고, 실행해서 확인한 것은 없다.
+- 위치는 `파일:행:열`로 적었다. `app.js`는 압축 파일이라 전체가 626행뿐이므로, 행 번호는 대략의 위치만 알려 준다.
+- REA의 한계: `app.js`는 semantic 노드 한도(파일당 20,000개)에 도달했다. 모듈 경계도 0개로, 복원하지 못했다. 그래서 대부분 기능의 세부 내용은 [문자열] 근거에 기댄다. REA가 찾지 못한 것을 "없다"는 근거로 쓰지 않는다.
+
+## [파일·폴더 탐색기]  (2026-11-11, REA 6.8.0)
+- 질문: 볼트 파일 트리를 어떻게 정렬하고, 삭제를 어떻게 처리하는가?
+- SEEN:
+  - [REA] 메인 IPC `trash` 핸들러 `main.js:70:7672`(ipc-handler 노드)와 리터럴 채널 노드 `literal:trash`.
+  - [문자열] 정렬 키 배열 `app.js:208`: `alphabetical`, `byModifiedTime`, `byCreatedTime`와 각각의 `…Reverse`, 모두 6종.
+  - [문자열] 볼트 어댑터에 `trashSystem`과 `trashLocal`이 있다(`app.js:41`). `trashLocal`은 볼트 안에 `.trash` 폴더를 만들고(`mkdir recursive`), 이름이 겹치면 숫자를 붙여 옮긴다.
+- INFERRED: 시스템 휴지통 삭제는 렌더러의 `trashSystem`이 메인 IPC `trash`를 부르는 구조로 보인다. 짝을 짓는 근거가 리터럴 채널 이름뿐이고, 렌더러 송신 쪽은 REA가 찾지 못했다(renderer_transmissions 0).
+- UNKNOWN: 드래그 앤 드롭 이동 규칙, 정렬이 폴더와 파일을 섞는지 여부, 숨김 파일(`.`으로 시작) 처리 범위.
+- 구현 방침: File System Access API(또는 로컬 서버) 위에 트리를 새로 만든다. 정렬은 이름·수정일·생성일 × 오름·내림차순 6종으로 하고, 삭제는 "볼트 내 `.trash`로 이동" 하나만 지원한다. 파일명 금지 문자 검사는 자체 규칙으로 정한다.
+
+## [마크다운 편집·읽기 모드]  (2026-11-11, REA 6.8.0)
+- 질문: 한 문서를 편집 모드와 읽기 모드로 어떻게 나누고 전환하는가?
+- SEEN:
+  - [REA] `classList.contains("markdown-preview-view")` 호출식이 `app.js:441:22854`, `app.js:535:11298`에 있다(unresolved-reference 노드). 읽기 모드 DOM 컨테이너 클래스다.
+  - [REA] `worker.js:19:4081`의 `enterLink()` 호출. 워커 안에 마크다운 토크나이저가 있다는 근거다.
+  - [문자열] 기본 설정 객체(`app.js:207`)에 `defaultViewMode:"source"`, `livePreview:!0`, `foldHeading:!0`, `showLineNumber:!1`, `vimMode:!1`, `tabSize:4` 등이 있다. `mode:"source"` 15회, CSS `markdown-source-view` 2회, 명령 `editor:toggle-source`.
+- INFERRED:
+  - 뷰 상태 하나(`mode`)로 편집(source)과 읽기(preview)를 오간다. 다만 `mode:"preview"` 리터럴은 0회라 다른 표현을 쓰는 듯하다.
+  - 편집기는 CodeMirror 6 계열이다(`ChangeSet`, `lezer`, `cm-content` 식별자).
+- UNKNOWN: 읽기 모드 렌더러 파이프라인(remark/hast 계열 노드 `hName`, `hProperties`가 보이지만 확정하지 못함), 스크롤 위치 동기화 방식.
+- 구현 방침: CodeMirror 6 편집기와, 별도 마크다운→HTML 렌더러(markdown-it 등 공개 라이브러리)를 쓰는 읽기 뷰를 하나의 "노트 뷰" 상태(`mode: edit | read`)로 전환한다. 기본값은 편집으로 한다.
+
+## [전체 검색]  (2026-11-11, REA 6.8.0)
+- 질문: 검색어 문법에는 어떤 연산자가 있는가?
+- SEEN:
+  - [REA] 검색 결과 하이라이트 클래스 `obsidian-search-match-highlight`(`app.js:535:19206`). REA는 이것을 네트워크 endpoint "후보"(low confidence)로 잘못 분류했다. 실제로는 CSS 클래스 문자열이다.
+  - [문자열] 연산자 표 `app.js:208`: `match-case`, `ignore-case`, `path`, `file`, `content`, `line`, `block`, `section`, `task`, `task-todo`, `task-done`, `tag`. `tag` 뒤에는 텍스트만 올 수 있다는 오류 메시지가 있다.
+  - [문자열] i18n에 정규식, 속성 일치, 크다/작다/참/거짓/비었음 조건이 있다.
+- INFERRED: 검색어를 토큰으로 나눈 뒤 연산자별 matcher 객체 트리로 조립하는 구조로 보인다(`jO(e)` → `GO(n,r)`).
+- UNKNOWN: AND/OR/괄호/`-` 부정의 우선순위, 인덱스를 쓰는지 아니면 매번 전체를 스캔하는지.
+- 구현 방침: 1차 구현은 `file:`, `path:`, `tag:`, `content:`, 따옴표 구문, `-` 제외, 대소문자 옵션만 지원한다. 처음에는 매번 메모리의 문서 전체를 스캔하고, 결과는 파일별로 묶어 보여 준다.
+
+## [빠른 전환 (Quick switcher)]  (2026-11-11, REA 6.8.0)
+- 질문: 파일 이름을 어떻게 매칭하고 정렬하는가?
+- SEEN:
+  - [REA] 없음. 관련 노드를 찾지 못했다.
+  - [문자열] 공개 API export 목록(`app.js:505`)에 `prepareFuzzySearch`, `prepareSimpleSearch`, `sortSearchResults`, `renderMatches`가 있다. core plugin id는 `switcher`, 명령은 `switcher:open`.
+- INFERRED: 빠른 전환은 `prepareFuzzySearch`(퍼지 매칭)와 점수 정렬을 쓰는 것으로 보인다. 호출 관계는 확인하지 못했다.
+- UNKNOWN: 점수 공식, 최근 연 파일 가중치, 별칭(alias)과 헤딩 검색 포함 여부.
+- 구현 방침: 직접 짠 부분 문자열·퍼지 점수 함수(연속 일치와 단어 시작에 가산점)를 쓴다. 최근 연 파일 목록을 앞에 보여 주고, Enter로 열고 Cmd+Enter로 새 탭에 연다.
+
+## [커맨드 팔레트]  (2026-11-11, REA 6.8.0)
+- 질문: 명령을 어떻게 등록하고, 최근 사용 순서를 어떻게 기억하는가?
+- SEEN:
+  - [REA] 없음. 관련 노드를 찾지 못했다.
+  - [문자열] 커맨드 팔레트 플러그인(`app.js:561`)은 `recentCommands=[]`로 시작하고, `loadLocalStorage("recent-commands")`로 복원한다. `t.commands.on("changed",…)` 이벤트를 받으면 설정 탭을 갱신한다. `defaultOn=!0`이다.
+  - [문자열] `id:"<그룹>:<이름>"` 형식의 command id 197개(10일 집계).
+- INFERRED: 최근 명령은 볼트별 localStorage에 저장되고, 팔레트를 열면 맨 위에 표시되는 것으로 보인다.
+- UNKNOWN: 최근 목록의 최대 길이, 고정(pinned) 명령 저장 위치(`pinned` 62회는 탭 고정 등과 섞여 있어 구분하지 못함).
+- 구현 방침: `commandRegistry.register({id, name, hotkey, run})` 구조를 새로 만든다. 팔레트는 빠른 전환과 같은 퍼지 매칭을 쓰고, 최근 명령은 localStorage에 최대 N개 저장한다.
+
+## [탭·분할 화면]  (2026-11-11, REA 6.8.0)
+- 질문: 탭과 분할 레이아웃을 어떻게 만들고 저장하는가?
+- SEEN:
+  - [REA] `n.workspace.openLinkText(c,a,h.detail.paneType)`를 부르는 `open-link` 이벤트 리스너(`app.js:425:55448`). 링크를 열 대상 pane 종류를 인자로 넘긴다.
+  - [문자열] `getLeaf(` 72회, `splitActiveLeaf` 8회, `"split"` 18회, `"tabs"` 5회, `mod-stacked` 1회. 설정 파일 이름 `workspace.json`, `workspace-mobile.json`. `workspace:` 명령 23개(10일 기록).
+- INFERRED: 레이아웃은 split(가로·세로) → tabs → leaf(뷰 하나) 트리이고, `workspace.json`에 직렬화되는 것으로 보인다.
+- UNKNOWN: `workspace.json` 스키마, 분할 비율 저장 방식, 사이드바와 본문 트리의 관계.
+- 구현 방침: 자체 레이아웃 트리를 만든다. `Split{direction, children, sizes}` / `TabGroup{tabs, active}` / `Leaf{viewType, state}`로 구성하고 JSON으로 localStorage에 저장한다. 1차 구현은 2단 분할까지만 지원한다.
+
+## [설정]  (2026-11-11, REA 6.8.0)
+- 질문: 설정을 어디에 어떤 단위로 저장하는가?
+- SEEN:
+  - [REA] 없음. 설정 파일 읽기는 렌더러의 어댑터를 거치는데, REA가 노드로 잡지 못했다.
+  - [문자열] 설정 파일 이름 리터럴: `app.json`, `appearance.json`, `core-plugins.json`, `core-plugins-migration.json`, `community-plugins.json`, `hotkeys.json`, `types.json`, `workspace.json`. 폴더 `.obsidian`, 그 아래 `themes`, `snippets`(`configDir` 기준, `app.js:207`).
+  - [문자열] 설정 탭 9개(10일 기록). 기본 설정 객체는 `app.js:207`에 있다(편집 모드 항목 참고).
+- INFERRED: 볼트 루트의 설정 폴더 안에 파일이 영역별(app/appearance/hotkeys/core-plugins)로 나뉘어 있다.
+- UNKNOWN: 각 JSON 파일의 키 전체, 기본값과 저장값을 병합하는 규칙.
+- 구현 방침: 자체 설정 폴더 `.reanotes/`에 `settings.json`(편집기·파일), `appearance.json`, `hotkeys.json`을 둔다. 기본값 객체와 저장값을 얕게 병합한다. 설정 모달은 일반 / 편집기 / 파일·링크 / 외관 / 단축키 5개 탭으로 시작한다.
+
+## [`[[링크]]` · 백링크]  (2026-11-11, REA 6.8.0)
+- 질문: 링크 텍스트를 어떤 파일로 해석하고, 백링크 인덱스를 어떻게 만드는가?
+- SEEN:
+  - [REA] `new Worker("worker.js",{name:"Metadata Cache Worker"})`(`app.js:401:2837`, worker 노드와 `loads` 관계). `worker.js`의 `enterLink()` 토큰 처리(`worker.js:19`). 각주 백링크 노드 생성 코드(`worker.js:30`, `app.js:44`).
+  - [문자열] `worker.js:173`의 `self.onmessage`가 받는 메시지 키는 `metadataCache`와 `parseSections`다.
+  - [문자열] `getLinkpathDest`(`app.js:401`)는 다음 순서로 동작한다.
+    1. 경로처럼 보이면 그대로 찾고, 없으면 `.md`를 붙여 다시 찾는다.
+    2. 소문자 파일명 → 후보 목록(`uniqueFileLookup`).
+    3. `./`, `../` 상대 경로는 원본 파일 폴더 기준으로 해석한다.
+    4. 전체 경로가 일치하면 그 파일을 쓰고, 아니면 경로가 `…/name`으로 끝나는 후보를 고른다.
+  - [문자열] `resolvedLinks` 22회, `unresolvedLinks` 9회, `getBacklinksForFile` 2회, `fileToLinktext` 13회.
+- INFERRED: 파싱(링크·헤딩·태그 추출)은 워커에서 하고, 결과가 `metadataCache`에 쌓인다. 그 위에서 `resolvedLinks`(원본→대상→개수) 맵으로 백링크를 계산하는 구조로 보인다.
+- UNKNOWN: 후보가 여러 개일 때의 최종 우선순위(가장 짧은 경로인지, 가까운 폴더인지). 코드 뒷부분은 끝까지 읽지 않았다. 별칭과 블록 참조(`#^id`)의 해석도 모른다.
+- 구현 방침:
+  - Web Worker에서 `[[대상|별칭]]`, `[[대상#헤딩]]`을 직접 짠 정규식/파서로 뽑는다.
+  - 해석 규칙은 "대소문자 무시, 확장자 생략, 같은 이름이 여러 개면 경로가 가장 짧은 파일"로 정하고, 이것이 우리 설계임을 문서에 밝힌다.
+  - 백링크는 역인덱스 `Map<target, Map<source, count>>`로 관리하고, 해석되지 않은 링크는 따로 모은다.
+
+## [Live Preview]  (2026-11-11, REA 6.8.0)
+- 질문: 편집 중에 마크업을 숨기고 렌더된 모양을 보여 주는 규칙은 무엇인가?
+- SEEN:
+  - [REA] 없음. 관련 노드를 찾지 못했다.
+  - [문자열] 기본 설정 `livePreview:!0`(`app.js:207`). CSS `is-live-preview` 1회. CodeMirror `Decoration.replace({widget…})` 형태(`J.replace({widget:…})`) 9회, `cm-active` 9회, `cm-hmd` 2회.
+- INFERRED: CodeMirror 6 decoration으로 커서가 없는 줄의 마크업을 위젯으로 바꾸는 방식으로 보인다(`cm-active`는 현재 줄 표시로 추정).
+- UNKNOWN: 어느 문법이 어떤 단위(줄, 블록, 인라인 범위)에서 숨겨지는지. 정적 문자열만으로는 규칙을 복원할 수 없어, 런타임에서 관찰해야 한다.
+- 구현 방침: CodeMirror 6 `ViewPlugin` + `Decoration.replace`를 직접 구현한다. 1차 범위는 굵게·기울임·헤딩 `#`·인라인 코드·`[[링크]]`이다. 커서가 있는 줄에서는 원문을 보이고, 나머지 줄에서는 마크업을 숨긴다. 표·콜아웃·임베드는 제외한다.
+
+## [그래프 뷰]  (2026-11-11, REA 6.8.0)
+- 질문: 노드와 링크를 어떤 레이아웃과 렌더러로 그리는가?
+- SEEN:
+  - [REA] `new Worker("/sim.js",{name:"Graph Worker"})`(`app.js:466:90666`, worker 노드). `sim.js`는 별도 source-module로 인식되었다. semantic 노드 4,679개.
+  - [문자열] 힘 파라미터 기본값 `nDe`(`app.js:505`): `centerStrength` 0.1, `repelStrength` 10, `linkStrength` 1, `linkDistance` 250. 로컬 그래프 기본값은 `localJumps:1`, `localBacklinks:!0`, `localForelinks:!0`, `localInterlinks:!1`. 표시 옵션은 `nodeSizeMultiplier`, `lineSizeMultiplier`.
+  - [문자열] `sim.js`는 `repelStrength`, `alpha`, `alphaTarget`, `run` 메시지를 받는다. 쿼드트리 코드도 들어 있다(d3-quadtree 형태). `lib/pixi.min.js` 7.2.4를 불러온다.
+- INFERRED: 레이아웃은 워커에서 Barnes–Hut 방식의 반발력 시뮬레이션으로 계산하고, 렌더링은 메인 스레드에서 PixiJS(WebGL)로 하는 것으로 보인다. d3-force의 `forceSimulation` 등 이름은 0회라, 자체 구현이나 이름이 바뀐 번들일 수 있다.
+- UNKNOWN: 메시지 프로토콜 전체, 노드 색 그룹 규칙, 줌에 따라 라벨이 사라지는 규칙.
+- 구현 방침: 노드·엣지는 링크 인덱스에서 만든다. 레이아웃은 Web Worker + 공개 라이브러리 d3-force(파라미터는 우리가 정함), 렌더링은 Canvas 2D로 한다. 1차 범위는 전체 그래프, 클릭으로 노트 열기, 드래그, 줌이다. 로컬 그래프는 깊이 1로 한다.
+
+## [캔버스]  (2026-11-11, REA 6.8.0)
+- 질문: `.canvas` 파일 구조와 노드 종류는 무엇인가?
+- SEEN:
+  - [REA] 없음. 관련 노드를 찾지 못했다.
+  - [문자열] 확장자 등록 `registerExtensions([rl],fC)`, `rl="canvas"`(10일 기록). 엣지 필드 이름 `fromNode`, `toNode`, `fromSide`, `toSide` 각 5~6회. `type:"text"`, `"file"`, `"link"`, `"group"` 리터럴.
+- INFERRED: `.canvas`는 노드 배열(text/file/link/group)과 엣지 배열(from/to 노드와 변)로 된 JSON 문서로 보인다.
+- UNKNOWN: 최상위 키 이름(`"nodes"`, `"edges"`라는 따옴표 리터럴은 0회), 좌표와 크기 필드, 색상 표현.
+- 구현 방침: **구현 안 함 (시간 부족).** 분석 내용만 남기고, 기록은 `docs/failures.md`에 둔다.

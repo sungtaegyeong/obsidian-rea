@@ -11,3 +11,7 @@ dist/
 
 # 개인 도구 상태 (oh-my-claudecode)
 .omc/
+
+# 빌드 산출물
+*.tsbuildinfo
+_to_delete/

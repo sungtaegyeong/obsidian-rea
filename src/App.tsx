@@ -57,8 +57,14 @@ interface Command {
   key?: string; // 예: "mod+o", "mod+shift+f"
   run(): void;
 }
-const keyLabel = (k?: string) =>
-  k?.split("+").map((p) => (p === "mod" ? MOD : p === "shift" ? (isMac ? "⇧" : "Shift+") : p === "alt" ? (isMac ? "⌥" : "Alt+") : p.toUpperCase())).join("");
+const ARROWS: Record<string, string> = { arrowleft: "←", arrowright: "→", arrowup: "↑", arrowdown: "↓" };
+// spaced: 커맨드 팔레트의 단축키 표시처럼 키 사이를 띄운다 (예: "⌘ ⇧ F")
+const keyLabel = (k?: string, spaced = false) =>
+  k
+    ?.split("+")
+    .map((p) => (p === "mod" ? MOD : p === "shift" ? (isMac ? "⇧" : "Shift+") : p === "alt" ? (isMac ? "⌥" : "Alt+") : (ARROWS[p] ?? p.toUpperCase())))
+    .map((p) => (spaced && isMac ? p.replace(/\+$/, "") : p))
+    .join(spaced && isMac ? " " : "");
 
 export default function App() {
   const [settings, setSettingsState] = useState<Settings>(loadSettings);
@@ -77,6 +83,7 @@ export default function App() {
   const [leftView, setLeftView] = useState<LeftView>("files");
   const [rightView, setRightView] = useState<RightView>("backlinks");
   const [modal, setModal] = useState<Modal>(null);
+  const [recent, setRecent] = useState<string[]>([]); // 최근에 연 노트 (빠른 전환의 기본 목록)
   const [moreMenu, setMoreMenu] = useState<number | null>(null); // "다른 옵션" 메뉴가 열린 창 번호
   useEffect(() => {
     if (moreMenu == null) return;
@@ -229,6 +236,10 @@ export default function App() {
   const pane = panes[activePane];
   const tab = pane?.tabs[pane.active];
   const activeFile = tab?.kind === "note" ? files.find((f) => f.path === tab.path) ?? null : null;
+  const activePath = activeFile?.path;
+  useEffect(() => {
+    if (activePath) setRecent((r) => [activePath, ...r.filter((x) => x !== activePath)].slice(0, 20));
+  }, [activePath]);
 
   const updatePane = (i: number, fn: (p: Pane) => Pane) => setPanes((ps) => ps.map((p, j) => (j === i ? fn(p) : p)));
 
@@ -265,6 +276,12 @@ export default function App() {
       return ps.map((x, k) => (k === i ? next : x));
     });
   }
+
+  // 오른쪽에 새 창을 만들고 그 창에서 연다 (빠른 전환 ⌘⌥↵)
+  const openRight = (path: string) => {
+    setPanes((ps) => [...ps.slice(0, activePane + 1), { id: uid(), tabs: [{ id: uid(), kind: "note", path, mode: settings.defaultMode }], active: 0 }, ...ps.slice(activePane + 1)]);
+    setActivePane(activePane + 1);
+  };
 
   const openLink = (target: string, newTab: boolean) => {
     const path = resolveLink(target, filesRef.current);
@@ -647,22 +664,32 @@ export default function App() {
       {/* 모달 */}
       {modal?.type === "switcher" && (
         <PickerModal
-          placeholder="파일 이름을 입력하세요…"
-          items={[...files].sort((a, b) => b.mtime - a.mtime).map((f) => ({ id: f.path, label: basename(f.path), note: dirname(f.path) || undefined }))}
-          emptyAction={(q) => ({ id: "__create__", label: q, note: "Enter로 새 노트 만들기" })}
-          instructions={[["↑↓", "이동"], ["↵", "열기"], [`${MOD}↵`, "새 탭에서 열기"], ["esc", "닫기"]]}
-          onPick={(it, q, mod) => {
+          placeholder="이동하거나 생성하려는 파일 이름 입력…"
+          items={[...files].sort((a, b) => b.mtime - a.mtime).map((f) => ({ id: f.path, label: f.path.replace(/\.md$/, "") }))}
+          initialItems={recent.filter((p) => p !== activeFile?.path && files.some((f) => f.path === p)).map((p) => ({ id: p, label: p.replace(/\.md$/, "") }))}
+          initialEmptyText="최근 파일을 찾지 못했습니다. 검색어를 입력하세요…"
+          emptyAction={(q) => ({ id: "__create__", label: q, note: "↵ 새 노트 만들기" })}
+          instructions={[[`${MOD}↵`, "새 탭에서 열기"], [`${MOD}${isMac ? "⌥" : "Alt+"}↵`, "오른쪽에 열기"], [isMac ? "⇧↵" : "Shift+↵", "생성하기"]]}
+          onPick={(it, q, k) => {
             setModal(null);
-            if (it.id === "__create__") createNote("", q.trim(), "", mod ? "new" : "current");
-            else openFile(it.id, mod);
+            if (it.id === "__create__") createNote("", q.trim(), "", k.mod ? "new" : "current");
+            else if (k.mod && k.alt) openRight(it.id);
+            else openFile(it.id, k.mod);
+          }}
+          onShiftEnter={(q) => {
+            setModal(null);
+            createNote("", q.trim());
           }}
           onClose={() => setModal(null)}
         />
       )}
       {modal?.type === "palette" && (
         <PickerModal
-          placeholder="명령을 입력하세요…"
-          items={commands.filter((c) => c.id !== "palette").map<PickerItem>((c) => ({ id: c.id, label: c.name, hotkey: keyLabel(c.key) }))}
+          placeholder="명령 선택…"
+          items={commands
+            .filter((c) => c.id !== "palette")
+            .sort((a, b) => a.name.localeCompare(b.name, "ko"))
+            .map<PickerItem>((c) => ({ id: c.id, label: c.name, hotkey: c.key ? keyLabel(c.key, true) : undefined }))}
           instructions={[["↑↓", "이동"], ["↵", "실행"], ["esc", "닫기"]]}
           onPick={(it) => {
             setModal(null);
